@@ -20,16 +20,20 @@ interface AuthState {
 const mockFarcasterConnect = async (): Promise<{ address: string; username: string }> => {
   // Simulate async connection
   await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Use a fixed address for our test user so we don't create a new user every time
   return {
-    address: `0x${Math.random().toString(16).substring(2, 8)}`,
-    username: 'farcaster_user'
+    address: '0xfixed123456',
+    username: 'testuser'
   };
 };
 
 const mockWalletConnect = async (): Promise<{ address: string }> => {
   // Simulate async connection
   await new Promise(resolve => setTimeout(resolve, 1000));
-  return { address: `0x${Math.random().toString(16).substring(2, 10)}` };
+  
+  // Use a fixed address for our test user so we don't create a new user every time
+  return { address: '0xfixed123456' };
 };
 
 export default function useAuth() {
@@ -41,6 +45,53 @@ export default function useAuth() {
   });
   
   const { toast } = useToast();
+  
+  // Helper function to login with test user
+  const loginWithTestUser = async () => {
+    try {
+      console.log('Attempting to login with test user');
+      
+      // Login with the test user
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: 'testuser',
+          password: 'password'
+        }),
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to login with test user, status:', response.status);
+        return null;
+      }
+      
+      const user = await response.json();
+      console.log('Successfully logged in with test user:', user);
+      
+      // Store in localStorage
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      setAuthState({
+        user,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+      });
+      
+      toast({
+        title: "Connected Successfully",
+        description: "You're now signed in with test user",
+      });
+      
+      return user;
+    } catch (error) {
+      console.error('Error logging in with test user:', error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     // Check for existing session in localStorage or cookie
@@ -231,7 +282,8 @@ export default function useAuth() {
   return {
     ...authState,
     connectWithFarcaster,
-    connectWithWallet,
+    connectWithWallet, 
+    loginWithTestUser, // Add the new function
     logout,
   };
 }
