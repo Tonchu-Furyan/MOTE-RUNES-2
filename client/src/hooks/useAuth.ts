@@ -265,7 +265,10 @@ export default function useAuth() {
   };
 
   const logout = () => {
+    // Clear user data from local storage
     localStorage.removeItem('user');
+    
+    // Update auth state to reflect logged out status
     setAuthState({
       user: null,
       isAuthenticated: false,
@@ -273,10 +276,17 @@ export default function useAuth() {
       error: null,
     });
     
+    // Force reload the application to ensure all states are properly reset
+    // This is a simpler approach than trying to clean up all possible states
+    // window.location.reload();
+    
     toast({
       title: "Logged Out",
       description: "You have been logged out successfully",
     });
+    
+    // For debugging purposes, log the logout event
+    console.log('User logged out successfully, auth state reset');
   };
 
   return {

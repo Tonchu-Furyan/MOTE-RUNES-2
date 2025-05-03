@@ -10,19 +10,29 @@ import { useToast } from "@/hooks/use-toast";
 import { RunePull } from "@/lib/runes";
 
 export default function DailyRune() {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { getLatestUserRunePull, getHasPulledToday, pullRuneMutation } = useRunes();
   const { toast } = useToast();
   
   const [isRevealing, setIsRevealing] = useState(false);
   
   const userId = user?.id || null;
-  const { data: hasPulledToday, isLoading: checkingPull } = getHasPulledToday(userId);
+  
+  // Only fetch data if user is authenticated
+  const { 
+    data: hasPulledToday, 
+    isLoading: checkingPull 
+  } = getHasPulledToday(userId, { 
+    enabled: isAuthenticated && userId !== null
+  });
+  
   const { 
     data: latestPull, 
     isLoading: loadingLatestPull,
     refetch: refetchLatestPull 
-  } = getLatestUserRunePull(userId);
+  } = getLatestUserRunePull(userId, {
+    enabled: isAuthenticated && userId !== null
+  });
   
   const handlePullRune = async () => {
     if (!userId) {
