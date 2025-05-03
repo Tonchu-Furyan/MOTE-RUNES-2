@@ -286,6 +286,9 @@ export default function useAuth() {
     
     // For debugging purposes, log the logout event
     console.log('User logged out successfully, auth state reset');
+    
+    // Force a reload to ensure clean state
+    setTimeout(() => window.location.reload(), 500);
   };
 
   return {
