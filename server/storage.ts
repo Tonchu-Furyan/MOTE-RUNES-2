@@ -10,6 +10,8 @@ export interface IStorage {
   getUserByFarcasterAddress(address: string): Promise<User | undefined>;
   getUserByWalletAddress(address: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserWallet(userId: number, walletAddress: string): Promise<User>;
+  updateUserFarcaster(userId: number, farcasterAddress: string): Promise<User>;
   
   getRune(id: number): Promise<Rune | undefined>;
   getAllRunes(): Promise<Rune[]>;
@@ -165,6 +167,36 @@ export class MemStorage implements IStorage {
     console.log('User created and stored. Current users:', Array.from(this.users.entries()));
     return user;
   }
+  
+  async updateUserWallet(userId: number, walletAddress: string): Promise<User> {
+    const user = this.users.get(userId);
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    const updatedUser: User = {
+      ...user,
+      walletAddress
+    };
+    
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
+  
+  async updateUserFarcaster(userId: number, farcasterAddress: string): Promise<User> {
+    const user = this.users.get(userId);
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    const updatedUser: User = {
+      ...user,
+      farcasterAddress
+    };
+    
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
 
   async getRune(id: number): Promise<Rune | undefined> {
     return this.runes.get(id);
@@ -267,6 +299,34 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
+  }
+  
+  async updateUserWallet(userId: number, walletAddress: string): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ walletAddress })
+      .where(eq(users.id, userId))
+      .returning();
+      
+    if (!updatedUser) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    return updatedUser;
+  }
+  
+  async updateUserFarcaster(userId: number, farcasterAddress: string): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ farcasterAddress })
+      .where(eq(users.id, userId))
+      .returning();
+      
+    if (!updatedUser) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    return updatedUser;
   }
 
   async getRune(id: number): Promise<Rune | undefined> {
