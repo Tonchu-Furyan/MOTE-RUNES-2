@@ -216,11 +216,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "You have already pulled a rune today" });
       }
       
-      // Create new rune pull
+      // Create new rune pull with current date (YYYY-MM-DD format)
+      const formattedDate = format(today, 'yyyy-MM-dd');
       const newRunePull = await storage.createRunePull({
         userId,
         runeId,
-        pullDate: today.toISOString()
+        pullDate: formattedDate
       });
       
       console.log('Created new rune pull:', newRunePull);

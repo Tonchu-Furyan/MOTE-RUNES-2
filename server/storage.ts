@@ -415,10 +415,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async hasUserPulledToday(userId: number, date: Date): Promise<boolean> {
-    const today = new Date(date);
-    today.setHours(0, 0, 0, 0);
+    // Get today's date in YYYY-MM-DD format for consistent comparison
+    const formattedToday = format(date, 'yyyy-MM-dd');
     
-    const todayStr = today.toISOString().split('T')[0];
+    console.log(`Checking if user ${userId} has pulled rune on ${formattedToday}`);
     
     const result = await db
       .select({ count: sql<number>`count(*)` })
@@ -426,10 +426,11 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(runePulls.userId, userId),
-          sql`date(${runePulls.pullDate}) = ${todayStr}`
+          sql`${runePulls.pullDate} = ${formattedToday}`
         )
       );
     
+    console.log(`Found ${result[0].count} pulls for user ${userId} on ${formattedToday}`);
     return result[0].count > 0;
   }
 }

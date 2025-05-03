@@ -46,6 +46,11 @@ export default function useAuth() {
     // Check for existing session in localStorage or cookie
     const checkAuth = async () => {
       try {
+        // Clear any existing session data from development
+        if (process.env.NODE_ENV === 'development') {
+          localStorage.removeItem('user');
+        }
+        
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
           const user = JSON.parse(storedUser);
