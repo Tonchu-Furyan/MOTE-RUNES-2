@@ -74,12 +74,21 @@ export default function useAuth() {
       // Store in localStorage
       localStorage.setItem('user', JSON.stringify(user));
       
+      // Update auth state with the user data
       setAuthState({
         user,
         isAuthenticated: true,
         isLoading: false,
         error: null,
       });
+      
+      // Dispatch authentication event to ensure components update
+      document.dispatchEvent(new CustomEvent('userAuthenticated', { 
+        detail: { user } 
+      }));
+      
+      // Force a reload to ensure clean state
+      window.location.reload();
       
       toast({
         title: "Connected Successfully",
@@ -97,19 +106,44 @@ export default function useAuth() {
     // Check for existing session in localStorage or cookie
     const checkAuth = async () => {
       try {
+        console.log("Auth hook initializing, checking localStorage");
         const storedUser = localStorage.getItem('user');
+        
         if (storedUser) {
-          const user = JSON.parse(storedUser);
-          setAuthState({
-            user,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-          });
+          try {
+            const user = JSON.parse(storedUser);
+            console.log("Found user in localStorage:", user);
+            
+            // Set state with a small delay to ensure it propagates properly
+            setTimeout(() => {
+              setAuthState({
+                user,
+                isAuthenticated: true,
+                isLoading: false,
+                error: null,
+              });
+              
+              // Dispatch event to notify components that user is authenticated
+              document.dispatchEvent(new CustomEvent('userAuthenticated', { 
+                detail: { user } 
+              }));
+            }, 10);
+          } catch (e) {
+            console.error("Failed to parse stored user", e);
+            localStorage.removeItem('user');
+            setAuthState({
+              user: null,
+              isAuthenticated: false,
+              isLoading: false,
+              error: 'Authentication check failed',
+            });
+          }
         } else {
+          console.log("No user found in localStorage");
           setAuthState(prev => ({ ...prev, isLoading: false }));
         }
       } catch (error) {
+        console.error("Error during auth check:", error);
         setAuthState({
           user: null,
           isAuthenticated: false,

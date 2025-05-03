@@ -23,6 +23,16 @@ function App() {
     setCurrentView(view);
   };
   
+  // Listen for authentication state changes
+  useEffect(() => {
+    console.log("Auth state changed:", { isAuthenticated, user });
+    
+    // Force re-render when user logs in
+    if (isAuthenticated && user) {
+      setAppKey(prev => prev + 1);
+    }
+  }, [isAuthenticated, user]);
+  
   // Listen for logout events
   useEffect(() => {
     const handleLogout = () => {
