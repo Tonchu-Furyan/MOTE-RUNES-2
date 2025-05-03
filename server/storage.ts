@@ -152,13 +152,17 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
+    console.log('Creating user with ID:', id, 'Data:', insertUser);
+    
     const user: User = { 
       ...insertUser,
       id,
       farcasterAddress: insertUser.farcasterAddress || null,
       walletAddress: insertUser.walletAddress || null
     };
+    
     this.users.set(id, user);
+    console.log('User created and stored. Current users:', Array.from(this.users.entries()));
     return user;
   }
 
@@ -237,3 +241,16 @@ export class MemStorage implements IStorage {
 }
 
 export const storage = new MemStorage();
+
+// Create a test user for debugging purposes
+(async () => {
+  try {
+    const testUser = await storage.createUser({
+      username: 'testuser',
+      password: 'password'
+    });
+    console.log('Created test user for debugging:', testUser);
+  } catch (error) {
+    console.error('Error creating test user:', error);
+  }
+})();

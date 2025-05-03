@@ -151,7 +151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const newRunePull = await storage.createRunePull({
         userId,
         runeId,
-        pullDate: today
+        pullDate: today.toISOString()
       });
       
       console.log('Created new rune pull:', newRunePull);

@@ -150,9 +150,25 @@ export async function pullDailyRune(userId: number): Promise<RunePull> {
         credentials: 'include'
       });
       
+      console.log('Rune pull response:', { 
+        status: response.status, 
+        statusText: response.statusText, 
+        headers: Object.fromEntries([...response.headers.entries()]),
+        ok: response.ok
+      });
+      
       if (!response.ok) {
         // Try to get the detailed error message from the response
-        const errorData = await response.json().catch(() => ({ message: 'Failed to pull rune' }));
+        const errorText = await response.text();
+        console.error('Raw server error response:', errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { message: 'Failed to parse error response' };
+        }
+        
         console.error('Server error response:', errorData);
         throw new Error(errorData.message || 'Failed to pull rune');
       }
