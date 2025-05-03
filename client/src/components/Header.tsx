@@ -37,6 +37,17 @@ export default function Header() {
             <span>{displayName}</span>
           </div>
           
+          {/* Direct logout button */}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={logout}
+            className="text-gold hover:bg-gold/10 mr-2"
+          >
+            <LogOut className="h-4 w-4 mr-1" />
+            Logout
+          </Button>
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="text-gold hover:text-offwhite transition duration-300">
