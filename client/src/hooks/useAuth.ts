@@ -276,9 +276,8 @@ export default function useAuth() {
       error: null,
     });
     
-    // Force reload the application to ensure all states are properly reset
-    // This is a simpler approach than trying to clean up all possible states
-    // window.location.reload();
+    // Reset to home/login view
+    document.dispatchEvent(new CustomEvent('userLogout'));
     
     toast({
       title: "Logged Out",

@@ -19,6 +19,19 @@ function App() {
     setCurrentView(view);
   };
   
+  // Listen for logout events
+  useEffect(() => {
+    const handleLogout = () => {
+      setCurrentView('daily');
+    };
+    
+    document.addEventListener('userLogout', handleLogout);
+    
+    return () => {
+      document.removeEventListener('userLogout', handleLogout);
+    };
+  }, []);
+  
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -27,8 +40,13 @@ function App() {
     );
   }
   
-  // If not authenticated, show login page
+  // If not authenticated or loading just completed and user is null, show login page
   if (!isAuthenticated) {
+    // Reset to daily view when showing login page
+    if (currentView !== "daily") {
+      setCurrentView("daily");
+    }
+    
     return (
       <TooltipProvider>
         <Toaster />
