@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import useAuth from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { useRunes } from "@/hooks/useRunes";
+import { useRunes, useHasPulledToday } from "@/hooks/useRunes";
 import { useToast } from "@/hooks/use-toast";
 
 // Mock wallet connector (to be replaced with actual implementation)
@@ -15,20 +15,12 @@ const mockWalletConnect = async (): Promise<{ address: string }> => {
 
 export default function Login() {
   const { connectWithFarcaster, connectWithWallet, isLoading, isAuthenticated, user, updateUser } = useAuth();
-  const { pullRuneMutation, getHasPulledToday } = useRunes();
+  const { pullRuneMutation } = useRunes();
+  const hasPulledQuery = useHasPulledToday(user?.id || null);
   const { toast } = useToast();
-  const [hasPulled, setHasPulled] = useState<boolean | null>(null);
   
-  // Check if user has already pulled today
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      getHasPulledToday(user.id).refetch().then((result) => {
-        if (result.data !== undefined) {
-          setHasPulled(result.data);
-        }
-      });
-    }
-  }, [isAuthenticated, user]);
+  // Determine if user has pulled a rune today
+  const hasPulled = hasPulledQuery.data === true;
   
   // Function to handle rune pull
   const handlePullRune = async () => {

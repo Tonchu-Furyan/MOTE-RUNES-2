@@ -5,24 +5,24 @@ import { Button } from "@/components/ui/button";
 import RuneRevealAnimation from "@/components/RuneRevealAnimation";
 import RuneCard from "@/components/RuneCard";
 import useAuth from "@/hooks/useAuth";
-import { useRunes } from "@/hooks/useRunes";
+import { useRunes, useHasPulledToday, useLatestUserRunePull } from "@/hooks/useRunes";
 import { useToast } from "@/hooks/use-toast";
 import { RunePull } from "@/lib/runes";
 
 export default function DailyRune() {
   const { user } = useAuth();
-  const { getLatestUserRunePull, getHasPulledToday, pullRuneMutation } = useRunes();
+  const { pullRuneMutation } = useRunes();
   const { toast } = useToast();
   
   const [isRevealing, setIsRevealing] = useState(false);
   
   const userId = user?.id || null;
-  const { data: hasPulledToday, isLoading: checkingPull } = getHasPulledToday(userId);
+  const { data: hasPulledToday, isLoading: checkingPull } = useHasPulledToday(userId);
   const { 
     data: latestPull, 
     isLoading: loadingLatestPull,
     refetch: refetchLatestPull 
-  } = getLatestUserRunePull(userId);
+  } = useLatestUserRunePull(userId);
   
   const handlePullRune = async () => {
     if (!userId) {

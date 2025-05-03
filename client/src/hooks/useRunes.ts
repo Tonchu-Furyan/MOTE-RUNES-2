@@ -11,43 +11,52 @@ import {
   type RunePull
 } from '@/lib/runes';
 
+// Custom hooks for individual queries
+export function useAllRunes() {
+  return useQuery({
+    queryKey: ['/api/runes'],
+    queryFn: () => fetchAllRunes(),
+  });
+}
+
+export function useRune(id: number) {
+  return useQuery({
+    queryKey: ['/api/runes', id],
+    queryFn: () => fetchRuneById(id),
+    enabled: !!id,
+  });
+}
+
+export function useUserRunePulls(userId: number | null) {
+  return useQuery({
+    queryKey: ['/api/rune-pulls/user', userId],
+    queryFn: () => fetchUserRunePulls(userId!),
+    enabled: !!userId,
+  });
+}
+
+export function useLatestUserRunePull(userId: number | null) {
+  return useQuery({
+    queryKey: ['/api/rune-pulls/user/latest', userId],
+    queryFn: () => fetchLatestUserRunePull(userId!),
+    enabled: !!userId,
+  });
+}
+
+export function useHasPulledToday(userId: number | null) {
+  return useQuery({
+    queryKey: ['/api/rune-pulls/user/check-today', userId],
+    queryFn: () => hasUserPulledToday(userId!),
+    enabled: !!userId,
+  });
+}
+
 export function useRunes() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
   // Query to get all runes
-  const allRunes = useQuery({
-    queryKey: ['/api/runes'],
-    queryFn: () => fetchAllRunes(),
-  });
-  
-  // Query factory for a single rune
-  const getRune = (id: number) => useQuery({
-    queryKey: ['/api/runes', id],
-    queryFn: () => fetchRuneById(id),
-    enabled: !!id,
-  });
-  
-  // Query factory for a user's rune pulls
-  const getUserRunePulls = (userId: number | null) => useQuery({
-    queryKey: ['/api/rune-pulls/user', userId],
-    queryFn: () => fetchUserRunePulls(userId!),
-    enabled: !!userId,
-  });
-  
-  // Query factory for a user's latest rune pull
-  const getLatestUserRunePull = (userId: number | null) => useQuery({
-    queryKey: ['/api/rune-pulls/user/latest', userId],
-    queryFn: () => fetchLatestUserRunePull(userId!),
-    enabled: !!userId,
-  });
-  
-  // Query to check if the user has pulled a rune today
-  const getHasPulledToday = (userId: number | null) => useQuery({
-    queryKey: ['/api/rune-pulls/user/check-today', userId],
-    queryFn: () => hasUserPulledToday(userId!),
-    enabled: !!userId,
-  });
+  const allRunes = useAllRunes();
   
   // Mutation to pull a daily rune
   const pullRuneMutation = useMutation({
@@ -79,10 +88,6 @@ export function useRunes() {
   
   return {
     allRunes,
-    getRune,
-    getUserRunePulls,
-    getLatestUserRunePull,
-    getHasPulledToday,
     pullRuneMutation,
   };
 }

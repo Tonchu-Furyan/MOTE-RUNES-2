@@ -3,7 +3,7 @@ import { ArrowLeft, Calendar, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import RuneHistoryItem from "@/components/RuneHistoryItem";
 import useAuth from "@/hooks/useAuth";
-import { useRunes } from "@/hooks/useRunes";
+import { useRunes, useUserRunePulls } from "@/hooks/useRunes";
 import RuneCard from "@/components/RuneCard";
 import { RunePull } from "@/lib/runes";
 
