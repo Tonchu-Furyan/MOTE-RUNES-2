@@ -9,11 +9,11 @@ import { RunePull } from "@/lib/runes";
 
 export default function History() {
   const { user } = useAuth();
-  const { getUserRunePulls } = useRunes();
+  const { pullRuneMutation } = useRunes();
   const [selectedPull, setSelectedPull] = useState<RunePull | null>(null);
   
   const userId = user?.id || null;
-  const { data: runePulls, isLoading } = getUserRunePulls(userId);
+  const { data: runePulls, isLoading } = useUserRunePulls(userId);
   
   const handleBack = () => {
     if (selectedPull) {
