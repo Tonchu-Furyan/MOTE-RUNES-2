@@ -84,6 +84,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Internal server error" });
     }
   });
+  
+  // Update user profile with wallet or farcaster address
+  app.patch("/api/auth/user/:id/wallet", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { walletAddress } = req.body;
+      
+      if (!walletAddress) {
+        return res.status(400).json({ message: "Wallet address is required" });
+      }
+      
+      // Check if user exists
+      const user = await storage.getUser(parseInt(id));
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Check if wallet address is already linked to another user
+      const existingUserWithWallet = await storage.getUserByWalletAddress(walletAddress);
+      if (existingUserWithWallet && existingUserWithWallet.id !== parseInt(id)) {
+        return res.status(409).json({ message: "Wallet address is already linked to another user" });
+      }
+      
+      // Update user
+      const updatedUser = await storage.updateUserWallet(parseInt(id), walletAddress);
+      
+      // Don't return the password
+      const { password, ...userWithoutPassword } = updatedUser;
+      return res.status(200).json(userWithoutPassword);
+    } catch (error) {
+      console.error('Error updating user wallet:', error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.patch("/api/auth/user/:id/farcaster", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { farcasterAddress } = req.body;
+      
+      if (!farcasterAddress) {
+        return res.status(400).json({ message: "Farcaster address is required" });
+      }
+      
+      // Check if user exists
+      const user = await storage.getUser(parseInt(id));
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Check if farcaster address is already linked to another user
+      const existingUserWithFarcaster = await storage.getUserByFarcasterAddress(farcasterAddress);
+      if (existingUserWithFarcaster && existingUserWithFarcaster.id !== parseInt(id)) {
+        return res.status(409).json({ message: "Farcaster address is already linked to another user" });
+      }
+      
+      // Update user
+      const updatedUser = await storage.updateUserFarcaster(parseInt(id), farcasterAddress);
+      
+      // Don't return the password
+      const { password, ...userWithoutPassword } = updatedUser;
+      return res.status(200).json(userWithoutPassword);
+    } catch (error) {
+      console.error('Error updating user farcaster:', error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // RUNE ROUTES
   app.get("/api/runes", async (_req: Request, res: Response) => {
