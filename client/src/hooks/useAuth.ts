@@ -46,11 +46,6 @@ export default function useAuth() {
     // Check for existing session in localStorage or cookie
     const checkAuth = async () => {
       try {
-        // Clear any existing session data from development
-        if (process.env.NODE_ENV === 'development') {
-          localStorage.removeItem('user');
-        }
-        
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
           const user = JSON.parse(storedUser);
@@ -233,24 +228,10 @@ export default function useAuth() {
     });
   };
 
-  // Method to update user data (for linking wallets, etc.)
-  const updateUser = (updatedUser: User) => {
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-    setAuthState({
-      user: updatedUser,
-      isAuthenticated: true,
-      isLoading: false,
-      error: null,
-    });
-    
-    return updatedUser;
-  };
-
   return {
     ...authState,
     connectWithFarcaster,
     connectWithWallet,
     logout,
-    updateUser,
   };
 }

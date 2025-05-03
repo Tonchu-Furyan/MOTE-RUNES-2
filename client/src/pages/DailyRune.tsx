@@ -5,27 +5,25 @@ import { Button } from "@/components/ui/button";
 import RuneRevealAnimation from "@/components/RuneRevealAnimation";
 import RuneCard from "@/components/RuneCard";
 import useAuth from "@/hooks/useAuth";
-import { useRunes, useHasPulledToday, useLatestUserRunePull } from "@/hooks/useRunes";
+import { useRunes } from "@/hooks/useRunes";
 import { useToast } from "@/hooks/use-toast";
 import { RunePull } from "@/lib/runes";
 
 export default function DailyRune() {
   const { user } = useAuth();
-  const { pullRuneMutation } = useRunes();
+  const { getLatestUserRunePull, getHasPulledToday, pullRuneMutation } = useRunes();
   const { toast } = useToast();
   
-  // Track animation state
   const [isRevealing, setIsRevealing] = useState(false);
   
   const userId = user?.id || null;
-  const { data: hasPulledToday, isLoading: checkingPull } = useHasPulledToday(userId);
+  const { data: hasPulledToday, isLoading: checkingPull } = getHasPulledToday(userId);
   const { 
     data: latestPull, 
     isLoading: loadingLatestPull,
     refetch: refetchLatestPull 
-  } = useLatestUserRunePull(userId);
+  } = getLatestUserRunePull(userId);
   
-  // Handler for pulling a new rune
   const handlePullRune = async () => {
     if (!userId) {
       toast({
@@ -36,50 +34,39 @@ export default function DailyRune() {
       return;
     }
     
-    // If already pulled today, we'll just see the rune already in latestPull
     if (hasPulledToday) {
       toast({
         variant: "destructive",
-        title: "Already Pulled Today",
-        description: "You have already drawn your rune for today.",
+        title: "Limit Reached",
+        description: "You have already pulled a rune today. Return tomorrow for new wisdom.",
       });
       return;
     }
     
+    setIsRevealing(true);
+    
     try {
-      // Initiate the pull animation first
-      setIsRevealing(true);
-      
-      // Pull the rune
-      console.log("Attempting to pull rune with user ID:", userId);
-      const result = await pullRuneMutation.mutateAsync(userId);
-      console.log("Pull result:", result);
-      
-      // After pulling, refetch the latest pull data
-      await refetchLatestPull();
-      
-      // Note: animation completion is handled by the RuneRevealAnimation component
-      // which will call handleRevealComplete when finished
-      
+      await pullRuneMutation.mutateAsync(userId);
+      // The animation will be handled by the component
     } catch (error) {
-      console.error("Error during rune pull:", error);
       setIsRevealing(false);
       // Error is already handled by the mutation
     }
   };
   
-  // Handler for when the reveal animation completes
   const handleRevealComplete = () => {
     setIsRevealing(false);
+    refetchLatestPull();
   };
   
-  // Handler for viewing history
   const handleViewHistory = () => {
+    // This will be handled by the parent component via props
+    // For now, we'll just use a placeholder
     document.dispatchEvent(new CustomEvent('changeView', { detail: 'history' }));
   };
   
-  // Loading state
   const isLoading = checkingPull || loadingLatestPull;
+  
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -97,8 +84,8 @@ export default function DailyRune() {
         </p>
       </div>
       
-      {/* PULL BUTTON - Only show if haven't pulled today and not in revealing animation */}
-      {!hasPulledToday && !isRevealing && (
+      {/* Pre-pull state */}
+      {!isRevealing && !hasPulledToday && (
         <motion.div 
           className="perspective w-full max-w-md"
           initial={{ opacity: 0 }}
@@ -141,7 +128,7 @@ export default function DailyRune() {
         </motion.div>
       )}
       
-      {/* REVEAL ANIMATION - Show during reveal */}
+      {/* Rune reveal animation */}
       {isRevealing && latestPull && (
         <RuneRevealAnimation 
           rune={latestPull.rune} 
@@ -149,14 +136,7 @@ export default function DailyRune() {
         />
       )}
       
-      {/* Loading animation when revealing but no latestPull yet */}
-      {isRevealing && !latestPull && (
-        <div className="flex items-center justify-center py-16">
-          <div className="w-20 h-20 border-4 border-gold rounded-full border-t-transparent animate-spin"></div>
-        </div>
-      )}
-      
-      {/* DISPLAY PULLED RUNE - Show when not revealing and has pulled today */}
+      {/* Post-pull state */}
       {!isRevealing && hasPulledToday && latestPull && (
         <RuneCard 
           runePull={latestPull} 

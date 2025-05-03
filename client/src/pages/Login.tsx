@@ -3,24 +3,25 @@ import { Button } from "@/components/ui/button";
 import useAuth from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { useRunes, useHasPulledToday } from "@/hooks/useRunes";
+import { useRunes } from "@/hooks/useRunes";
 import { useToast } from "@/hooks/use-toast";
 
-// Mock wallet connector (to be replaced with actual implementation)
-const mockWalletConnect = async (): Promise<{ address: string }> => {
-  // Simulate async connection
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return { address: `0x${Math.random().toString(16).substring(2, 10)}` };
-};
-
 export default function Login() {
-  const { connectWithFarcaster, connectWithWallet, isLoading, isAuthenticated, user, updateUser } = useAuth();
-  const { pullRuneMutation } = useRunes();
-  const hasPulledQuery = useHasPulledToday(user?.id || null);
+  const { connectWithFarcaster, connectWithWallet, isLoading, isAuthenticated, user } = useAuth();
+  const { pullRuneMutation, getHasPulledToday } = useRunes();
   const { toast } = useToast();
+  const [hasPulled, setHasPulled] = useState<boolean | null>(null);
   
-  // Determine if user has pulled a rune today
-  const hasPulled = hasPulledQuery.data === true;
+  // Check if user has already pulled today
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      getHasPulledToday(user.id).refetch().then((result) => {
+        if (result.data !== undefined) {
+          setHasPulled(result.data);
+        }
+      });
+    }
+  }, [isAuthenticated, user]);
   
   // Function to handle rune pull
   const handlePullRune = async () => {
@@ -51,104 +52,9 @@ export default function Login() {
     }
   };
   
-  // Function to handle wallet linking
-  const [linkingWallet, setLinkingWallet] = useState(false);
-  const [linkingAddress, setLinkingAddress] = useState("");
-  
-  const handleLinkWallet = async () => {
-    if (!user) return;
-    
-    try {
-      const { address } = await mockWalletConnect();
-      setLinkingAddress(address);
-      setLinkingWallet(true);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Connection Failed",
-        description: error instanceof Error ? error.message : 'Failed to connect wallet',
-      });
-    }
-  };
-  
-  const confirmLinkWallet = async () => {
-    if (!user || !linkingAddress) return;
-    
-    try {
-      const response = await fetch(`/api/auth/user/${user.id}/wallet`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          walletAddress: linkingAddress
-        }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to link wallet');
-      }
-      
-      const updatedUser = await response.json();
-      
-      // Update auth state with the new user data
-      updateUser(updatedUser);
-      
-      toast({
-        title: "Wallet Linked",
-        description: "Your wallet has been successfully linked to your account",
-      });
-      
-      setLinkingWallet(false);
-      setLinkingAddress("");
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to Link Wallet",
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-      });
-    }
-  };
-  
-  const cancelLinkWallet = () => {
-    setLinkingWallet(false);
-    setLinkingAddress("");
-  };
-  
   // Select which content to show based on authentication state
   const renderContent = () => {
     if (isAuthenticated) {
-      // Show wallet linking confirmation dialog
-      if (linkingWallet) {
-        return (
-          <div className="bg-black/80 border border-gold rounded-lg p-6 w-full max-w-md">
-            <h2 className="font-cinzel text-2xl mb-4 text-gold">Link Wallet</h2>
-            <p className="text-lightgray mb-4">
-              Would you like to link this wallet to your account?
-            </p>
-            <p className="font-mono text-sm bg-darkgray p-2 rounded mb-6 break-all">
-              {linkingAddress}
-            </p>
-            <div className="flex space-x-4">
-              <Button
-                onClick={cancelLinkWallet}
-                variant="outline"
-                className="flex-1 border-darkgray text-lightgray hover:border-red-500 hover:text-red-500"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={confirmLinkWallet}
-                className="flex-1 gold-gradient text-black font-bold"
-              >
-                Link Wallet
-              </Button>
-            </div>
-          </div>
-        );
-      }
-      
       return (
         <>
           <h2 className="font-cinzel text-3xl mb-2 text-gold">Daily Guidance Awaits</h2>
@@ -176,8 +82,8 @@ export default function Login() {
             )}
           </Button>
           
-          <div className="mt-4 flex flex-col space-y-2">
-            {hasPulled && (
+          {hasPulled && (
+            <div className="mt-4">
               <Button
                 onClick={() => document.dispatchEvent(new CustomEvent('changeView', { detail: 'daily' }))}
                 variant="outline"
@@ -186,28 +92,8 @@ export default function Login() {
                 <span>View Your Rune</span>
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-            )}
-            
-            {!user?.walletAddress && (
-              <Button
-                onClick={handleLinkWallet}
-                variant="outline"
-                className="text-lightgray border-darkgray hover:text-gold hover:border-gold mt-2"
-              >
-                <svg 
-                  className="mr-2 h-5 w-5" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <rect x="3" y="6" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="2" />
-                  <path d="M7 15h2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  <path d="M3 10h18" stroke="currentColor" strokeWidth="2" />
-                </svg>
-                Link Wallet
-              </Button>
-            )}
-          </div>
+            </div>
+          )}
         </>
       );
     }

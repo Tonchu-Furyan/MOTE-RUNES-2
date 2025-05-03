@@ -84,75 +84,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Internal server error" });
     }
   });
-  
-  // Update user profile with wallet or farcaster address
-  app.patch("/api/auth/user/:id/wallet", async (req: Request, res: Response) => {
-    try {
-      const { id } = req.params;
-      const { walletAddress } = req.body;
-      
-      if (!walletAddress) {
-        return res.status(400).json({ message: "Wallet address is required" });
-      }
-      
-      // Check if user exists
-      const user = await storage.getUser(parseInt(id));
-      
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      // Check if wallet address is already linked to another user
-      const existingUserWithWallet = await storage.getUserByWalletAddress(walletAddress);
-      if (existingUserWithWallet && existingUserWithWallet.id !== parseInt(id)) {
-        return res.status(409).json({ message: "Wallet address is already linked to another user" });
-      }
-      
-      // Update user
-      const updatedUser = await storage.updateUserWallet(parseInt(id), walletAddress);
-      
-      // Don't return the password
-      const { password, ...userWithoutPassword } = updatedUser;
-      return res.status(200).json(userWithoutPassword);
-    } catch (error) {
-      console.error('Error updating user wallet:', error);
-      return res.status(500).json({ message: "Internal server error" });
-    }
-  });
-  
-  app.patch("/api/auth/user/:id/farcaster", async (req: Request, res: Response) => {
-    try {
-      const { id } = req.params;
-      const { farcasterAddress } = req.body;
-      
-      if (!farcasterAddress) {
-        return res.status(400).json({ message: "Farcaster address is required" });
-      }
-      
-      // Check if user exists
-      const user = await storage.getUser(parseInt(id));
-      
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      // Check if farcaster address is already linked to another user
-      const existingUserWithFarcaster = await storage.getUserByFarcasterAddress(farcasterAddress);
-      if (existingUserWithFarcaster && existingUserWithFarcaster.id !== parseInt(id)) {
-        return res.status(409).json({ message: "Farcaster address is already linked to another user" });
-      }
-      
-      // Update user
-      const updatedUser = await storage.updateUserFarcaster(parseInt(id), farcasterAddress);
-      
-      // Don't return the password
-      const { password, ...userWithoutPassword } = updatedUser;
-      return res.status(200).json(userWithoutPassword);
-    } catch (error) {
-      console.error('Error updating user farcaster:', error);
-      return res.status(500).json({ message: "Internal server error" });
-    }
-  });
 
   // RUNE ROUTES
   app.get("/api/runes", async (_req: Request, res: Response) => {
@@ -186,69 +117,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('POST /api/rune-pulls request body:', req.body);
       
-      // Input validation with detailed error messages
-      if (!userId) {
-        console.log('Missing required field: userId');
-        return res.status(400).json({ message: "User ID is required" });
-      }
-      
-      if (!runeId) {
-        console.log('Missing required field: runeId');
-        return res.status(400).json({ message: "Rune ID is required" });
-      }
-      
-      // Convert to numbers and validate
-      const userIdNum = parseInt(userId);
-      const runeIdNum = parseInt(runeId);
-      
-      if (isNaN(userIdNum)) {
-        console.log('Invalid userId format:', userId);
-        return res.status(400).json({ message: "User ID must be a valid number" });
-      }
-      
-      if (isNaN(runeIdNum)) {
-        console.log('Invalid runeId format:', runeId);
-        return res.status(400).json({ message: "Rune ID must be a valid number" });
+      if (!userId || !runeId) {
+        console.log('Missing required fields userId or runeId');
+        return res.status(400).json({ message: "User ID and Rune ID are required" });
       }
       
       // Check if user exists
-      const user = await storage.getUser(userIdNum);
-      console.log('Looking up user with ID:', userIdNum, 'Result:', user ? 'Found' : 'Not found');
+      const user = await storage.getUser(userId);
+      console.log('Looking up user with ID:', userId, 'Result:', user ? 'Found' : 'Not found');
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
       // Check if rune exists
-      const rune = await storage.getRune(runeIdNum);
-      console.log('Looking up rune with ID:', runeIdNum, 'Result:', rune ? 'Found' : 'Not found');
+      const rune = await storage.getRune(runeId);
+      console.log('Looking up rune with ID:', runeId, 'Result:', rune ? 'Found' : 'Not found');
       
       if (!rune) {
         return res.status(404).json({ message: "Rune not found" });
       }
       
-      // Check if user has already pulled a rune today with detailed logging
+      // Check if user has already pulled a rune today
       const today = new Date();
-      console.log(`Date for rune pull check: ${format(today, 'yyyy-MM-dd')} (ISO: ${today.toISOString()})`);
-      
-      const hasPulledToday = await storage.hasUserPulledToday(userIdNum, today);
-      console.log(`User ${userIdNum} has pulled today? ${hasPulledToday}`);
+      const hasPulledToday = await storage.hasUserPulledToday(userId, today);
+      console.log('User', userId, 'has pulled today?', hasPulledToday);
       
       if (hasPulledToday) {
-        return res.status(400).json({ 
-          message: "You have already pulled a rune today",
-          date: format(today, 'yyyy-MM-dd')
-        });
+        return res.status(400).json({ message: "You have already pulled a rune today" });
       }
       
-      // Create new rune pull with current date (YYYY-MM-DD format)
-      const formattedDate = format(today, 'yyyy-MM-dd');
-      console.log(`Creating new rune pull for user ${userIdNum} with date: ${formattedDate}`);
-      
+      // Create new rune pull
       const newRunePull = await storage.createRunePull({
-        userId: userIdNum,
-        runeId: runeIdNum,
-        pullDate: formattedDate
+        userId,
+        runeId,
+        pullDate: today.toISOString()
       });
       
       console.log('Created new rune pull:', newRunePull);
@@ -264,16 +167,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error in POST /api/rune-pulls:', error);
       
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Validation error", 
-          errors: error.errors
-        });
+        return res.status(400).json({ message: error.errors });
       }
-      
-      return res.status(500).json({ 
-        message: "Internal server error",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
+      return res.status(500).json({ message: "Internal server error" });
     }
   });
 
@@ -306,25 +202,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/rune-pulls/user/:userId/check-today", async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;
-      
-      if (!userId || isNaN(parseInt(userId))) {
-        return res.status(400).json({ message: "Invalid user ID", hasPulledToday: false });
-      }
-      
       const today = new Date();
-      console.log(`Checking if user ${userId} has pulled a rune on ${format(today, 'yyyy-MM-dd')}`);
-      
       const hasPulledToday = await storage.hasUserPulledToday(parseInt(userId), today);
-      console.log(`User ${userId} has pulled today: ${hasPulledToday}`);
       
       return res.status(200).json({ hasPulledToday });
     } catch (error) {
-      console.error("Error checking if user has pulled today:", error);
-      return res.status(500).json({ 
-        message: "Internal server error", 
-        error: error instanceof Error ? error.message : "Unknown error",
-        hasPulledToday: false 
-      });
+      return res.status(500).json({ message: "Internal server error" });
     }
   });
 
