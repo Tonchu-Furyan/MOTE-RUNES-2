@@ -32,11 +32,18 @@ export async function fetchAllRunes(): Promise<Rune[]> {
 }
 
 export async function fetchRuneById(id: number): Promise<Rune> {
-  const response = await fetch(`/api/runes/${id}`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch rune');
+  try {
+    const response = await fetch(`/api/runes/${id}`, {
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch rune: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching rune id ${id}:`, error);
+    throw new Error('Failed to fetch rune. Please try again later.');
   }
-  return response.json();
 }
 
 export async function pullDailyRune(userId: number): Promise<RunePull> {
@@ -160,23 +167,32 @@ export async function pullDailyRune(userId: number): Promise<RunePull> {
 }
 
 export async function fetchUserRunePulls(userId: number): Promise<RunePull[]> {
-  const response = await fetch(`/api/rune-pulls/user/${userId}`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch user rune pulls');
+  try {
+    const response = await fetch(`/api/rune-pulls/user/${userId}`, {
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user rune pulls: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching user rune pulls:', error);
+    throw new Error('Failed to fetch your rune history. Please try again later.');
   }
-  return response.json();
 }
 
 export async function fetchLatestUserRunePull(userId: number): Promise<RunePull | null> {
   try {
-    const response = await fetch(`/api/rune-pulls/user/${userId}/latest`);
+    const response = await fetch(`/api/rune-pulls/user/${userId}/latest`, {
+      credentials: 'include'
+    });
     if (response.status === 404) {
       return null;
     }
     if (!response.ok) {
-      throw new Error('Failed to fetch latest user rune pull');
+      throw new Error(`Failed to fetch latest rune pull: ${response.status} ${response.statusText}`);
     }
-    return response.json();
+    return await response.json();
   } catch (error) {
     console.error('Error fetching latest pull:', error);
     return null;
@@ -185,14 +201,17 @@ export async function fetchLatestUserRunePull(userId: number): Promise<RunePull 
 
 export async function hasUserPulledToday(userId: number): Promise<boolean> {
   try {
-    const response = await fetch(`/api/rune-pulls/user/${userId}/check-today`);
+    const response = await fetch(`/api/rune-pulls/user/${userId}/check-today`, {
+      credentials: 'include'
+    });
     if (!response.ok) {
-      throw new Error('Failed to check if user has pulled today');
+      throw new Error(`Failed to check if user has pulled today: ${response.status} ${response.statusText}`);
     }
     const data = await response.json();
     return data.hasPulledToday;
   } catch (error) {
     console.error('Error checking if user has pulled today:', error);
+    // Default to false on error to allow user to attempt a pull
     return false;
   }
 }
