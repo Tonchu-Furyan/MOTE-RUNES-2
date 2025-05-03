@@ -126,28 +126,6 @@ export default function RuneCard({ runePull, onViewHistory }: RuneCardProps) {
           <Share2 className="mr-2 h-4 w-4" />
           <span>Share</span>
         </Button>
-        
-        <Button 
-          onClick={onViewHistory}
-          variant="outline" 
-          className="flex items-center text-offwhite border border-darkgray rounded-lg px-6 py-2 hover:border-gold hover:text-gold transition duration-300"
-        >
-          <svg 
-            className="mr-2 h-4 w-4" 
-            xmlns="http://www.w3.org/2000/svg" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-          >
-            <path d="M3 12h18"></path>
-            <path d="M3 6h18"></path>
-            <path d="M3 18h18"></path>
-          </svg>
-          <span>History</span>
-        </Button>
       </div>
     </div>
   );
