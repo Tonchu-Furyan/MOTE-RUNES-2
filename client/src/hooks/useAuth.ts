@@ -1,0 +1,237 @@
+import { useState, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
+
+interface User {
+  id: number;
+  username: string;
+  farcasterAddress?: string;
+  walletAddress?: string;
+}
+
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+// This is a placeholder for the actual Coinbase Minikit implementation
+// In a real app, you would import and use the actual Minikit functionality
+const mockFarcasterConnect = async (): Promise<{ address: string; username: string }> => {
+  // Simulate async connection
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  return {
+    address: `0x${Math.random().toString(16).substring(2, 8)}`,
+    username: 'farcaster_user'
+  };
+};
+
+const mockWalletConnect = async (): Promise<{ address: string }> => {
+  // Simulate async connection
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  return { address: `0x${Math.random().toString(16).substring(2, 10)}` };
+};
+
+export default function useAuth() {
+  const [authState, setAuthState] = useState<AuthState>({
+    user: null,
+    isAuthenticated: false,
+    isLoading: true,
+    error: null,
+  });
+  
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Check for existing session in localStorage or cookie
+    const checkAuth = async () => {
+      try {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          setAuthState({
+            user,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+          });
+        } else {
+          setAuthState(prev => ({ ...prev, isLoading: false }));
+        }
+      } catch (error) {
+        setAuthState({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: 'Authentication check failed',
+        });
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  const connectWithFarcaster = async () => {
+    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+    
+    try {
+      // This would use the actual Coinbase Minikit in production
+      const { address, username } = await mockFarcasterConnect();
+      
+      // Check if user exists
+      const response = await fetch(`/api/auth/user/farcaster/${address}`);
+      
+      let user: User;
+      
+      if (response.status === 404) {
+        // Create new user
+        const createResponse = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username: username || `user_${Math.floor(Math.random() * 10000)}`,
+            password: Math.random().toString(36).substring(2), // Random password
+            farcasterAddress: address,
+          }),
+        });
+        
+        if (!createResponse.ok) {
+          throw new Error('Failed to create user');
+        }
+        
+        user = await createResponse.json();
+      } else if (response.ok) {
+        user = await response.json();
+      } else {
+        throw new Error('Failed to authenticate');
+      }
+      
+      // Store in localStorage
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      setAuthState({
+        user,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+      });
+      
+      toast({
+        title: "Connected Successfully",
+        description: "You're now signed in with Farcaster",
+      });
+      
+      return user;
+    } catch (error) {
+      console.error('Error connecting with Farcaster:', error);
+      setAuthState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Authentication failed',
+      }));
+      
+      toast({
+        variant: "destructive",
+        title: "Connection Failed",
+        description: error instanceof Error ? error.message : 'Authentication failed',
+      });
+      
+      return null;
+    }
+  };
+
+  const connectWithWallet = async () => {
+    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+    
+    try {
+      // This would use the actual Coinbase Minikit in production
+      const { address } = await mockWalletConnect();
+      
+      // Check if user exists
+      const response = await fetch(`/api/auth/user/wallet/${address}`);
+      
+      let user: User;
+      
+      if (response.status === 404) {
+        // Create new user
+        const createResponse = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username: `wallet_${Math.floor(Math.random() * 10000)}`,
+            password: Math.random().toString(36).substring(2), // Random password
+            walletAddress: address,
+          }),
+        });
+        
+        if (!createResponse.ok) {
+          throw new Error('Failed to create user');
+        }
+        
+        user = await createResponse.json();
+      } else if (response.ok) {
+        user = await response.json();
+      } else {
+        throw new Error('Failed to authenticate');
+      }
+      
+      // Store in localStorage
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      setAuthState({
+        user,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+      });
+      
+      toast({
+        title: "Connected Successfully",
+        description: "You're now signed in with your wallet",
+      });
+      
+      return user;
+    } catch (error) {
+      console.error('Error connecting wallet:', error);
+      setAuthState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Authentication failed',
+      }));
+      
+      toast({
+        variant: "destructive",
+        title: "Connection Failed",
+        description: error instanceof Error ? error.message : 'Authentication failed',
+      });
+      
+      return null;
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('user');
+    setAuthState({
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
+    });
+    
+    toast({
+      title: "Logged Out",
+      description: "You have been logged out successfully",
+    });
+  };
+
+  return {
+    ...authState,
+    connectWithFarcaster,
+    connectWithWallet,
+    logout,
+  };
+}
