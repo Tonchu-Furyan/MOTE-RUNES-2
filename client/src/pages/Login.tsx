@@ -14,8 +14,7 @@ const mockWalletConnect = async (): Promise<{ address: string }> => {
 };
 
 export default function Login() {
-  const { connectWithFarcaster, connectWithWallet, isLoading, isAuthenticated, user, logout } = useAuth();
-  const [authState, setAuthState] = useState({ user, isAuthenticated, isLoading, error: null });
+  const { connectWithFarcaster, connectWithWallet, isLoading, isAuthenticated, user, updateUser } = useAuth();
   const { pullRuneMutation, getHasPulledToday } = useRunes();
   const { toast } = useToast();
   const [hasPulled, setHasPulled] = useState<boolean | null>(null);
@@ -101,14 +100,8 @@ export default function Login() {
       
       const updatedUser = await response.json();
       
-      // Update localStorage
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      
-      // Update auth state
-      setAuthState(prev => ({
-        ...prev,
-        user: updatedUser
-      }));
+      // Update auth state with the new user data
+      updateUser(updatedUser);
       
       toast({
         title: "Wallet Linked",
