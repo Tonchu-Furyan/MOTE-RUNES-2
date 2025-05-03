@@ -102,13 +102,26 @@ export class MemStorage implements IStorage {
       }
     ];
     
-    elderFutharkRunes.forEach(runeData => {
+    // Adding rarity values based on the perceived power and meaning of each rune
+    const runesWithRarity = [
+      { ...elderFutharkRunes[0], rarity: "uncommon" }, // FEHU - Wealth is moderately powerful
+      { ...elderFutharkRunes[1], rarity: "common" },   // URUZ - Basic strength rune
+      { ...elderFutharkRunes[2], rarity: "rare" },     // THURISAZ - Protection is valuable
+      { ...elderFutharkRunes[3], rarity: "epic" },     // ANSUZ - Divine wisdom is very powerful
+      { ...elderFutharkRunes[4], rarity: "common" },   // RAIDHO - Basic journey rune
+      { ...elderFutharkRunes[5], rarity: "uncommon" }, // KENAZ - Vision is moderately valuable
+      { ...elderFutharkRunes[6], rarity: "common" },   // GEBO - Basic partnership rune
+      { ...elderFutharkRunes[7], rarity: "uncommon" }  // WUNJO - Joy is moderately valuable
+    ];
+    
+    runesWithRarity.forEach(runeData => {
       this.createRune({
         name: runeData.name,
         symbol: runeData.symbol,
         meaning: runeData.meaning,
         interpretation: runeData.interpretation,
-        guidance: runeData.guidance
+        guidance: runeData.guidance,
+        rarity: runeData.rarity
       });
     });
   }
@@ -137,7 +150,12 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser,
+      id,
+      farcasterAddress: insertUser.farcasterAddress || null,
+      walletAddress: insertUser.walletAddress || null
+    };
     this.users.set(id, user);
     return user;
   }
@@ -152,7 +170,11 @@ export class MemStorage implements IStorage {
 
   async createRune(insertRune: InsertRune): Promise<Rune> {
     const id = this.runeIdCounter++;
-    const rune: Rune = { ...insertRune, id };
+    const rune: Rune = { 
+      ...insertRune, 
+      id,
+      rarity: insertRune.rarity || "common" // Default to common if no rarity provided
+    };
     this.runes.set(id, rune);
     return rune;
   }

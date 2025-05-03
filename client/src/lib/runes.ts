@@ -38,9 +38,80 @@ export async function pullDailyRune(userId: number): Promise<RunePull> {
   // Get all runes
   const runes = await fetchAllRunes();
   
-  // Randomly select a rune
-  const randomIndex = Math.floor(Math.random() * runes.length);
-  const selectedRune = runes[randomIndex];
+  // Implement weighted selection based on rarity
+  // Probabilities: common (60%), uncommon (25%), rare (10%), epic (4%), legendary (1%)
+  const rarityWeights = {
+    "common": 60,
+    "uncommon": 25,
+    "rare": 10,
+    "epic": 4,
+    "legendary": 1
+  };
+  
+  // Group runes by rarity
+  const runesByRarity: Record<string, Rune[]> = {
+    "common": [],
+    "uncommon": [],
+    "rare": [],
+    "epic": [],
+    "legendary": []
+  };
+  
+  runes.forEach(rune => {
+    if (runesByRarity[rune.rarity]) {
+      runesByRarity[rune.rarity].push(rune);
+    } else {
+      // Default to common if rarity is not recognized
+      runesByRarity.common.push(rune);
+    }
+  });
+  
+  // Determine which rarity group to pull from
+  const rarityRoll = Math.random() * 100;
+  let cumulativeProbability = 0;
+  let selectedRarity: string = "common"; // Default
+  
+  for (const [rarity, weight] of Object.entries(rarityWeights)) {
+    cumulativeProbability += weight;
+    if (rarityRoll <= cumulativeProbability) {
+      selectedRarity = rarity;
+      break;
+    }
+  }
+  
+  // If no runes in the selected rarity, fall back to common
+  if (runesByRarity[selectedRarity].length === 0) {
+    selectedRarity = "common";
+    
+    // If still no runes (unlikely), just use any rune
+    if (runesByRarity.common.length === 0) {
+      const selectedRune = runes[Math.floor(Math.random() * runes.length)];
+      
+      // Create a new rune pull
+      const response = await fetch('/api/rune-pulls', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          runeId: selectedRune.id,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to pull rune');
+      }
+      
+      return response.json();
+    }
+  }
+  
+  // Pick random rune from the selected rarity group
+  const rarityGroup = runesByRarity[selectedRarity];
+  const randomIndex = Math.floor(Math.random() * rarityGroup.length);
+  const selectedRune = rarityGroup[randomIndex];
   
   // Create a new rune pull
   const response = await fetch('/api/rune-pulls', {

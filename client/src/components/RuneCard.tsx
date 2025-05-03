@@ -50,8 +50,17 @@ export default function RuneCard({ runePull, onViewHistory }: RuneCardProps) {
       <div className={`rune-card mb-8 relative h-[400px] ${isFlipped ? 'flipped' : ''}`}>
         <div className="rune-card-front">
           <div className="border-2 border-gold rounded-xl p-10 text-center relative bg-darkgray h-full flex flex-col items-center justify-center">
-            <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-black px-4 py-1">
-              <h3 className="font-cinzel text-gold text-lg">{rune.name}</h3>
+            <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-black px-4 py-1 flex items-center">
+              <h3 className="font-cinzel text-gold text-lg mr-2">{rune.name}</h3>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full ${
+                rune.rarity === "common" ? "bg-gray-600 text-gray-200" :
+                rune.rarity === "uncommon" ? "bg-green-700 text-green-100" :
+                rune.rarity === "rare" ? "bg-blue-700 text-blue-100" :
+                rune.rarity === "epic" ? "bg-purple-700 text-purple-100" :
+                "bg-yellow-600 text-yellow-100"
+              }`}>
+                {rune.rarity.charAt(0).toUpperCase() + rune.rarity.slice(1)}
+              </span>
             </div>
             
             <div className="mb-8">
@@ -75,8 +84,17 @@ export default function RuneCard({ runePull, onViewHistory }: RuneCardProps) {
         
         <div className="rune-card-back">
           <div className="border-2 border-gold rounded-xl p-8 relative bg-darkgray h-full flex flex-col">
-            <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-black px-4 py-1">
-              <h3 className="font-cinzel text-gold text-lg">{rune.name}</h3>
+            <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-black px-4 py-1 flex items-center">
+              <h3 className="font-cinzel text-gold text-lg mr-2">{rune.name}</h3>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full ${
+                rune.rarity === "common" ? "bg-gray-600 text-gray-200" :
+                rune.rarity === "uncommon" ? "bg-green-700 text-green-100" :
+                rune.rarity === "rare" ? "bg-blue-700 text-blue-100" :
+                rune.rarity === "epic" ? "bg-purple-700 text-purple-100" :
+                "bg-yellow-600 text-yellow-100"
+              }`}>
+                {rune.rarity.charAt(0).toUpperCase() + rune.rarity.slice(1)}
+              </span>
             </div>
             
             <div className="flex-1 overflow-y-auto py-4">
