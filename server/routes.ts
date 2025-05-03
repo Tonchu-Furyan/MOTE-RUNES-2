@@ -115,18 +115,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId, runeId } = req.body;
       
+      console.log('POST /api/rune-pulls request body:', req.body);
+      
       if (!userId || !runeId) {
+        console.log('Missing required fields userId or runeId');
         return res.status(400).json({ message: "User ID and Rune ID are required" });
       }
       
       // Check if user exists
       const user = await storage.getUser(userId);
+      console.log('Looking up user with ID:', userId, 'Result:', user ? 'Found' : 'Not found');
+      
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
       // Check if rune exists
       const rune = await storage.getRune(runeId);
+      console.log('Looking up rune with ID:', runeId, 'Result:', rune ? 'Found' : 'Not found');
+      
       if (!rune) {
         return res.status(404).json({ message: "Rune not found" });
       }
@@ -134,6 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user has already pulled a rune today
       const today = new Date();
       const hasPulledToday = await storage.hasUserPulledToday(userId, today);
+      console.log('User', userId, 'has pulled today?', hasPulledToday);
       
       if (hasPulledToday) {
         return res.status(400).json({ message: "You have already pulled a rune today" });
@@ -146,6 +154,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pullDate: today
       });
       
+      console.log('Created new rune pull:', newRunePull);
+      
       // Return the pull with the rune data
       const pullWithRune = {
         ...newRunePull,
@@ -154,6 +164,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       return res.status(201).json(pullWithRune);
     } catch (error) {
+      console.error('Error in POST /api/rune-pulls:', error);
+      
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.errors });
       }

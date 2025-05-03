@@ -127,6 +127,8 @@ export class MemStorage implements IStorage {
   }
 
   async getUser(id: number): Promise<User | undefined> {
+    console.log('Getting user with ID:', id);
+    console.log('Current users in storage:', Array.from(this.users.entries()));
     return this.users.get(id);
   }
 

@@ -51,8 +51,12 @@ export function useRunes() {
   
   // Mutation to pull a daily rune
   const pullRuneMutation = useMutation({
-    mutationFn: (userId: number) => pullDailyRune(userId),
+    mutationFn: (userId: number) => {
+      console.log('pullRuneMutation executing with userId:', userId);
+      return pullDailyRune(userId);
+    },
     onSuccess: (data) => {
+      console.log('Rune pull mutation succeeded with data:', data);
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['/api/rune-pulls/user', data.userId] });
       queryClient.invalidateQueries({ queryKey: ['/api/rune-pulls/user/latest', data.userId] });
@@ -64,6 +68,7 @@ export function useRunes() {
       });
     },
     onError: (error) => {
+      console.error('Rune pull mutation failed:', error);
       toast({
         variant: 'destructive',
         title: 'Failed to pull rune',

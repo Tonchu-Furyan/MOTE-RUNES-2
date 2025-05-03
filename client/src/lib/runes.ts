@@ -151,14 +151,21 @@ export async function pullDailyRune(userId: number): Promise<RunePull> {
       });
       
       if (!response.ok) {
+        // Try to get the detailed error message from the response
         const errorData = await response.json().catch(() => ({ message: 'Failed to pull rune' }));
+        console.error('Server error response:', errorData);
         throw new Error(errorData.message || 'Failed to pull rune');
       }
       
       return await response.json();
     } catch (error) {
       console.error('Error pulling rune:', error);
-      throw new Error('Failed to pull rune. Please try again later.');
+      // If it's an error with a message, preserve it for better user feedback
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error('Failed to pull rune. Please try again later.');
+      }
     }
   } catch (error) {
     console.error('Error in pullDailyRune:', error);

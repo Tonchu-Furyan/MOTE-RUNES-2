@@ -25,14 +25,25 @@ export default function Login() {
   
   // Function to handle rune pull
   const handlePullRune = async () => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: "You must be logged in to pull a rune. Please reconnect your account.",
+      });
+      return;
+    }
+    
+    console.log('Attempting to pull rune with user ID:', user.id);
     
     try {
-      await pullRuneMutation.mutateAsync(user.id);
+      const result = await pullRuneMutation.mutateAsync(user.id);
+      console.log('Rune pull successful:', result);
       
       // Navigate to daily rune view after pull
       document.dispatchEvent(new CustomEvent('changeView', { detail: 'daily' }));
     } catch (error) {
+      console.error('Pull rune error:', error);
       toast({
         variant: "destructive",
         title: "Failed to pull rune",
@@ -47,8 +58,13 @@ export default function Login() {
       return (
         <>
           <h2 className="font-cinzel text-3xl mb-2 text-gold">Daily Guidance Awaits</h2>
-          <p className="text-lightgray max-w-md mx-auto mb-8">
+          <p className="text-lightgray max-w-md mx-auto mb-4">
             Pull your daily rune to receive guidance from the ancient Elder Futhark.
+          </p>
+          <p className="text-xs text-gray-500 mb-4">
+            Connected as: User ID {user?.id} 
+            {user?.farcasterAddress ? ` | Farcaster: ${user.farcasterAddress.substring(0, 6)}...` : ''}
+            {user?.walletAddress ? ` | Wallet: ${user.walletAddress.substring(0, 6)}...` : ''}
           </p>
           
           <Button
