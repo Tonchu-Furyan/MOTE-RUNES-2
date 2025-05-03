@@ -28,7 +28,7 @@ export default function Header() {
     <header className="border-b border-darkgray">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex items-center">
-          <h1 className="font-cinzel font-bold text-gold text-2xl">RUNE SEER</h1>
+          <h1 className="font-cinzel font-bold text-gold text-2xl">MOTE RUNES</h1>
         </div>
         
         <div className="flex items-center">

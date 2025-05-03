@@ -27,6 +27,7 @@ export const runes = pgTable("runes", {
   meaning: text("meaning").notNull(),
   interpretation: text("interpretation").notNull(),
   guidance: text("guidance").notNull(),
+  rarity: text("rarity").notNull().default("common"),
 });
 
 export const insertRuneSchema = createInsertSchema(runes).pick({
@@ -35,6 +36,7 @@ export const insertRuneSchema = createInsertSchema(runes).pick({
   meaning: true,
   interpretation: true,
   guidance: true,
+  rarity: true,
 });
 
 export type InsertRune = z.infer<typeof insertRuneSchema>;

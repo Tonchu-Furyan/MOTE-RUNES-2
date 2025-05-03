@@ -30,7 +30,7 @@ export default function Login() {
           </div>
         </motion.div>
         
-        <h2 className="font-cinzel text-3xl mb-2 text-gold">Welcome to Rune Seer</h2>
+        <h2 className="font-cinzel text-3xl mb-2 text-gold">Welcome to Mote Runes</h2>
         <p className="text-lightgray max-w-md mx-auto mb-8">
           Connect with your Farcaster account to receive daily guidance from the Elder Futhark runes.
         </p>

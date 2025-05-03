@@ -5,6 +5,7 @@ export interface Rune {
   meaning: string;
   interpretation: string;
   guidance: string;
+  rarity: "common" | "uncommon" | "rare" | "epic" | "legendary";
 }
 
 export interface RunePull {
