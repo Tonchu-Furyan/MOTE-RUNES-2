@@ -223,14 +223,32 @@ export async function fetchLatestUserRunePull(userId: number): Promise<RunePull 
 }
 
 export async function hasUserPulledToday(userId: number): Promise<boolean> {
+  if (!userId) {
+    console.warn('hasUserPulledToday called with no userId');
+    return false;
+  }
+  
+  console.log(`Checking if user ${userId} has pulled a rune today...`);
+  
   try {
     const response = await fetch(`/api/rune-pulls/user/${userId}/check-today`, {
       credentials: 'include'
     });
+    
+    console.log(`Received response status: ${response.status}`);
+    
     if (!response.ok) {
+      // Log the full error response for debugging
+      const errorText = await response.text();
+      console.error(`Server response (${response.status}):`);
+      console.error(errorText);
+      
       throw new Error(`Failed to check if user has pulled today: ${response.status} ${response.statusText}`);
     }
+    
     const data = await response.json();
+    console.log(`Has user ${userId} pulled today? ${data.hasPulledToday}`);
+    
     return data.hasPulledToday;
   } catch (error) {
     console.error('Error checking if user has pulled today:', error);

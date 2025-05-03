@@ -186,41 +186,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('POST /api/rune-pulls request body:', req.body);
       
-      if (!userId || !runeId) {
-        console.log('Missing required fields userId or runeId');
-        return res.status(400).json({ message: "User ID and Rune ID are required" });
+      // Input validation with detailed error messages
+      if (!userId) {
+        console.log('Missing required field: userId');
+        return res.status(400).json({ message: "User ID is required" });
+      }
+      
+      if (!runeId) {
+        console.log('Missing required field: runeId');
+        return res.status(400).json({ message: "Rune ID is required" });
+      }
+      
+      // Convert to numbers and validate
+      const userIdNum = parseInt(userId);
+      const runeIdNum = parseInt(runeId);
+      
+      if (isNaN(userIdNum)) {
+        console.log('Invalid userId format:', userId);
+        return res.status(400).json({ message: "User ID must be a valid number" });
+      }
+      
+      if (isNaN(runeIdNum)) {
+        console.log('Invalid runeId format:', runeId);
+        return res.status(400).json({ message: "Rune ID must be a valid number" });
       }
       
       // Check if user exists
-      const user = await storage.getUser(userId);
-      console.log('Looking up user with ID:', userId, 'Result:', user ? 'Found' : 'Not found');
+      const user = await storage.getUser(userIdNum);
+      console.log('Looking up user with ID:', userIdNum, 'Result:', user ? 'Found' : 'Not found');
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
       // Check if rune exists
-      const rune = await storage.getRune(runeId);
-      console.log('Looking up rune with ID:', runeId, 'Result:', rune ? 'Found' : 'Not found');
+      const rune = await storage.getRune(runeIdNum);
+      console.log('Looking up rune with ID:', runeIdNum, 'Result:', rune ? 'Found' : 'Not found');
       
       if (!rune) {
         return res.status(404).json({ message: "Rune not found" });
       }
       
-      // Check if user has already pulled a rune today
+      // Check if user has already pulled a rune today with detailed logging
       const today = new Date();
-      const hasPulledToday = await storage.hasUserPulledToday(userId, today);
-      console.log('User', userId, 'has pulled today?', hasPulledToday);
+      console.log(`Date for rune pull check: ${format(today, 'yyyy-MM-dd')} (ISO: ${today.toISOString()})`);
+      
+      const hasPulledToday = await storage.hasUserPulledToday(userIdNum, today);
+      console.log(`User ${userIdNum} has pulled today? ${hasPulledToday}`);
       
       if (hasPulledToday) {
-        return res.status(400).json({ message: "You have already pulled a rune today" });
+        return res.status(400).json({ 
+          message: "You have already pulled a rune today",
+          date: format(today, 'yyyy-MM-dd')
+        });
       }
       
       // Create new rune pull with current date (YYYY-MM-DD format)
       const formattedDate = format(today, 'yyyy-MM-dd');
+      console.log(`Creating new rune pull for user ${userIdNum} with date: ${formattedDate}`);
+      
       const newRunePull = await storage.createRunePull({
-        userId,
-        runeId,
+        userId: userIdNum,
+        runeId: runeIdNum,
         pullDate: formattedDate
       });
       
@@ -237,9 +264,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error in POST /api/rune-pulls:', error);
       
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.errors });
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors
+        });
       }
-      return res.status(500).json({ message: "Internal server error" });
+      
+      return res.status(500).json({ 
+        message: "Internal server error",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
@@ -272,12 +306,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/rune-pulls/user/:userId/check-today", async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;
+      
+      if (!userId || isNaN(parseInt(userId))) {
+        return res.status(400).json({ message: "Invalid user ID", hasPulledToday: false });
+      }
+      
       const today = new Date();
+      console.log(`Checking if user ${userId} has pulled a rune on ${format(today, 'yyyy-MM-dd')}`);
+      
       const hasPulledToday = await storage.hasUserPulledToday(parseInt(userId), today);
+      console.log(`User ${userId} has pulled today: ${hasPulledToday}`);
       
       return res.status(200).json({ hasPulledToday });
     } catch (error) {
-      return res.status(500).json({ message: "Internal server error" });
+      console.error("Error checking if user has pulled today:", error);
+      return res.status(500).json({ 
+        message: "Internal server error", 
+        error: error instanceof Error ? error.message : "Unknown error",
+        hasPulledToday: false 
+      });
     }
   });
 
