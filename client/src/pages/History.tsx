@@ -12,7 +12,8 @@ export default function History() {
   const [selectedPull, setSelectedPull] = useState<RunePull | null>(null);
   
   const userId = user?.id || null;
-  const { data: runePulls, isLoading } = useUserRunePulls(userId);
+  // Use the direct hook
+  const { data: runePulls = [], isLoading } = useUserRunePulls(userId);
   
   const handleBack = () => {
     if (selectedPull) {
@@ -23,7 +24,7 @@ export default function History() {
     }
   };
   
-  const handleSelectPull = (pull: RunePull) => {
+  const handleSelectPull = (pull: RunePull): void => {
     setSelectedPull(pull);
   };
   

@@ -7,7 +7,8 @@ import RuneCard from "@/components/RuneCard";
 import useAuth from "@/hooks/useAuth";
 import { useRunes, useHasPulledToday, useLatestUserRunePull } from "@/hooks/useRunes";
 import { useToast } from "@/hooks/use-toast";
-import { RunePull } from "@/lib/runes";
+import { RunePull, pullDailyRune } from "@/lib/runes";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function DailyRune() {
   const { user, isAuthenticated } = useAuth();

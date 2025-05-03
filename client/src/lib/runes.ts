@@ -150,10 +150,10 @@ export async function pullDailyRune(userId: number): Promise<RunePull> {
         credentials: 'include'
       });
       
+      // Log response details without headers to avoid iterator issues
       console.log('Rune pull response:', { 
         status: response.status, 
-        statusText: response.statusText, 
-        headers: Object.fromEntries([...response.headers.entries()]),
+        statusText: response.statusText,
         ok: response.ok
       });
       
