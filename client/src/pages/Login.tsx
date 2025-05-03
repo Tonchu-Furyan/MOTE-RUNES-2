@@ -1,27 +1,18 @@
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import useAuth from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { useRunes } from "@/hooks/useRunes";
+import { useRunes, useHasPulledToday } from "@/hooks/useRunes";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
   const { connectWithFarcaster, connectWithWallet, loginWithTestUser, isLoading, isAuthenticated, user } = useAuth();
-  const { pullRuneMutation, getHasPulledToday } = useRunes();
+  const { pullRuneMutation } = useRunes();
   const { toast } = useToast();
-  const [hasPulled, setHasPulled] = useState<boolean | null>(null);
   
-  // Check if user has already pulled today
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      getHasPulledToday(user.id).refetch().then((result) => {
-        if (result.data !== undefined) {
-          setHasPulled(result.data);
-        }
-      });
-    }
-  }, [isAuthenticated, user]);
+  // Get has pulled today status directly
+  const hasPulledTodayQuery = useHasPulledToday(user?.id || null);
+  const hasPulled = hasPulledTodayQuery.data;
   
   // Function to handle rune pull
   const handlePullRune = async () => {

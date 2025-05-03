@@ -1,38 +1,34 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import RuneRevealAnimation from "@/components/RuneRevealAnimation";
 import RuneCard from "@/components/RuneCard";
 import useAuth from "@/hooks/useAuth";
-import { useRunes } from "@/hooks/useRunes";
+import { useRunes, useHasPulledToday, useLatestUserRunePull } from "@/hooks/useRunes";
 import { useToast } from "@/hooks/use-toast";
 import { RunePull } from "@/lib/runes";
 
 export default function DailyRune() {
   const { user, isAuthenticated } = useAuth();
-  const { getLatestUserRunePull, getHasPulledToday, pullRuneMutation } = useRunes();
+  const { pullRuneMutation } = useRunes();
   const { toast } = useToast();
   
   const [isRevealing, setIsRevealing] = useState(false);
   
   const userId = user?.id || null;
   
-  // Only fetch data if user is authenticated
+  // Use the standalone hooks directly with the user ID
   const { 
     data: hasPulledToday, 
     isLoading: checkingPull 
-  } = getHasPulledToday(userId, { 
-    enabled: isAuthenticated && userId !== null
-  });
+  } = useHasPulledToday(userId);
   
   const { 
     data: latestPull, 
     isLoading: loadingLatestPull,
     refetch: refetchLatestPull 
-  } = getLatestUserRunePull(userId, {
-    enabled: isAuthenticated && userId !== null
-  });
+  } = useLatestUserRunePull(userId);
   
   const handlePullRune = async () => {
     if (!userId) {

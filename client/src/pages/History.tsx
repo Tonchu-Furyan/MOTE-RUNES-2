@@ -3,17 +3,16 @@ import { ArrowLeft, Calendar, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import RuneHistoryItem from "@/components/RuneHistoryItem";
 import useAuth from "@/hooks/useAuth";
-import { useRunes } from "@/hooks/useRunes";
+import { useUserRunePulls } from "@/hooks/useRunes";
 import RuneCard from "@/components/RuneCard";
 import { RunePull } from "@/lib/runes";
 
 export default function History() {
   const { user } = useAuth();
-  const { getUserRunePulls } = useRunes();
   const [selectedPull, setSelectedPull] = useState<RunePull | null>(null);
   
   const userId = user?.id || null;
-  const { data: runePulls, isLoading } = getUserRunePulls(userId);
+  const { data: runePulls, isLoading } = useUserRunePulls(userId);
   
   const handleBack = () => {
     if (selectedPull) {
