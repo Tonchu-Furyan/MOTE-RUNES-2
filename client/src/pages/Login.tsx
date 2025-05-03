@@ -2,17 +2,47 @@ import { Button } from "@/components/ui/button";
 import useAuth from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { useRunes, useHasPulledToday } from "@/hooks/useRunes";
+import { useHasPulledToday } from "@/hooks/useRunes";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { pullDailyRune } from "@/lib/runes";
 
 export default function Login() {
   const { connectWithFarcaster, connectWithWallet, loginWithTestUser, isLoading, isAuthenticated, user } = useAuth();
-  const { pullRuneMutation } = useRunes();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   
   // Get has pulled today status directly
   const hasPulledTodayQuery = useHasPulledToday(user?.id || null);
   const hasPulled = hasPulledTodayQuery.data;
+  
+  // Create pull rune mutation
+  const pullRuneMutation = useMutation({
+    mutationFn: (userId: number) => {
+      console.log('pullRuneMutation executing with userId:', userId);
+      return pullDailyRune(userId);
+    },
+    onSuccess: (data) => {
+      console.log('Rune pull mutation succeeded with data:', data);
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ['/api/rune-pulls/user', data.userId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/rune-pulls/user/latest', data.userId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/rune-pulls/user/check-today', data.userId] });
+      
+      toast({
+        title: 'Rune Pulled Successfully',
+        description: `You pulled ${data.rune.name}`,
+      });
+    },
+    onError: (error) => {
+      console.error('Rune pull mutation failed:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Failed to pull rune',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+      });
+    },
+  });
   
   // Function to handle rune pull
   const handlePullRune = async () => {

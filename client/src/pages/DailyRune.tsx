@@ -5,15 +5,15 @@ import { Button } from "@/components/ui/button";
 import RuneRevealAnimation from "@/components/RuneRevealAnimation";
 import RuneCard from "@/components/RuneCard";
 import useAuth from "@/hooks/useAuth";
-import { useRunes, useHasPulledToday, useLatestUserRunePull } from "@/hooks/useRunes";
+import { useHasPulledToday, useLatestUserRunePull } from "@/hooks/useRunes";
 import { useToast } from "@/hooks/use-toast";
 import { RunePull, pullDailyRune } from "@/lib/runes";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function DailyRune() {
   const { user, isAuthenticated } = useAuth();
-  const { pullRuneMutation } = useRunes();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const [isRevealing, setIsRevealing] = useState(false);
   
@@ -30,6 +30,34 @@ export default function DailyRune() {
     isLoading: loadingLatestPull,
     refetch: refetchLatestPull 
   } = useLatestUserRunePull(userId);
+  
+  // Create our own pull rune mutation
+  const pullRuneMutation = useMutation({
+    mutationFn: (userId: number) => {
+      console.log('pullRuneMutation executing with userId:', userId);
+      return pullDailyRune(userId);
+    },
+    onSuccess: (data) => {
+      console.log('Rune pull mutation succeeded with data:', data);
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ['/api/rune-pulls/user', data.userId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/rune-pulls/user/latest', data.userId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/rune-pulls/user/check-today', data.userId] });
+      
+      toast({
+        title: 'Rune Pulled Successfully',
+        description: `You pulled ${data.rune.name}`,
+      });
+    },
+    onError: (error) => {
+      console.error('Rune pull mutation failed:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Failed to pull rune',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+      });
+    },
+  });
   
   const handlePullRune = async () => {
     if (!userId) {
