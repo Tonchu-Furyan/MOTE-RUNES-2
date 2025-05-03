@@ -11,8 +11,12 @@ import { useState, useEffect } from "react";
 import useAuth from "@/hooks/useAuth";
 
 function App() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const [currentView, setCurrentView] = useState<string>("daily");
+  const [appKey, setAppKey] = useState<number>(0); // Key to force re-render
+  
+  // Add console log to debug authentication state
+  console.log("App rendering, auth state:", { isAuthenticated, isLoading, user });
   
   // Handle view changes
   const handleViewChange = (view: string) => {
@@ -22,7 +26,10 @@ function App() {
   // Listen for logout events
   useEffect(() => {
     const handleLogout = () => {
+      console.log("Logout event detected, resetting app state");
       setCurrentView('daily');
+      // Force app to re-render completely
+      setAppKey(prev => prev + 1);
     };
     
     document.addEventListener('userLogout', handleLogout);
@@ -32,6 +39,7 @@ function App() {
     };
   }, []);
   
+  // Loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -40,12 +48,14 @@ function App() {
     );
   }
   
-  // If not authenticated or loading just completed and user is null, show login page
-  if (!isAuthenticated) {
+  // Not authenticated - show login
+  if (!isAuthenticated || !user) {
     // Reset to daily view when showing login page
     if (currentView !== "daily") {
       setCurrentView("daily");
     }
+    
+    console.log("Rendering login page, user not authenticated");
     
     return (
       <TooltipProvider>
@@ -55,9 +65,10 @@ function App() {
     );
   }
   
-  // If authenticated, show app with navigation
+  // Authenticated - show main app with key to force fresh render
+  console.log("Rendering main app, user authenticated");
   return (
-    <TooltipProvider>
+    <TooltipProvider key={appKey}>
       <Toaster />
       <div className="min-h-screen flex flex-col">
         <Header />

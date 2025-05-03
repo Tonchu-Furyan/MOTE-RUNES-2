@@ -265,8 +265,13 @@ export default function useAuth() {
   };
 
   const logout = () => {
-    // Clear user data from local storage
-    localStorage.removeItem('user');
+    console.log('Executing logout function');
+    
+    // Dispatch the event first, so listeners can respond
+    document.dispatchEvent(new CustomEvent('userLogout'));
+    
+    // Clear ALL user data from local storage
+    localStorage.clear();
     
     // Update auth state to reflect logged out status
     setAuthState({
@@ -276,9 +281,6 @@ export default function useAuth() {
       error: null,
     });
     
-    // Reset to home/login view
-    document.dispatchEvent(new CustomEvent('userLogout'));
-    
     toast({
       title: "Logged Out",
       description: "You have been logged out successfully",
@@ -287,8 +289,8 @@ export default function useAuth() {
     // For debugging purposes, log the logout event
     console.log('User logged out successfully, auth state reset');
     
-    // Force a reload to ensure clean state
-    setTimeout(() => window.location.reload(), 500);
+    // Force a reload after a short delay to ensure clean state
+    setTimeout(() => window.location.href = '/', 300);
   };
 
   return {

@@ -11,12 +11,15 @@ import {
 import { Button } from "@/components/ui/button";
 
 export default function Header() {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   
   const shortenAddress = (address: string | undefined) => {
     if (!address) return "";
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
+  
+  // Add console logging to debug
+  console.log("Header component rendering. Auth state:", { user, isAuthenticated });
   
   const displayName = user?.farcasterAddress 
     ? shortenAddress(user.farcasterAddress) 
