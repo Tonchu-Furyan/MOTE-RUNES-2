@@ -5,10 +5,7 @@ import { insertUserSchema, insertRunePullSchema } from "@shared/schema";
 import { z } from "zod";
 import { format } from "date-fns";
 import { AuthKitProvider } from "@farcaster/auth-kit";
-import { 
-  Message as FarcasterMessage,
-  VerificationEthAddressMessage
-} from "@farcaster/core";
+import { Message as FarcasterMessage } from "@farcaster/core";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // AUTH ROUTES

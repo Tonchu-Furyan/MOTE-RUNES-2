@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useSignIn } from '@farcaster/auth-kit';
 
 interface User {
   id: number;
   username: string;
   farcasterAddress?: string;
   walletAddress?: string;
+  fid?: number;
+  displayName?: string;
+  pfpUrl?: string;
+  custody?: string;
+  verifications?: string[];
 }
 
 interface AuthState {
@@ -156,46 +162,64 @@ export default function useAuth() {
     checkAuth();
   }, []);
 
+  // Initialize Farcaster auth hook
+  const { signIn, status, error: farcasterError } = useSignIn();
+  
   const connectWithFarcaster = async () => {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
-      // This would use the actual Coinbase Minikit in production
-      const { address, username } = await mockFarcasterConnect();
+      // Trigger the Farcaster sign-in
+      const signInResult = await signIn();
       
-      // Check if user exists
-      const response = await fetch(`/api/auth/user/farcaster/${address}`);
-      
-      let user: User;
-      
-      if (response.status === 404) {
-        // Create new user
-        const createResponse = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username: username || `user_${Math.floor(Math.random() * 10000)}`,
-            password: Math.random().toString(36).substring(2), // Random password
-            farcasterAddress: address,
-          }),
-        });
-        
-        if (!createResponse.ok) {
-          throw new Error('Failed to create user');
-        }
-        
-        user = await createResponse.json();
-      } else if (response.ok) {
-        user = await response.json();
-      } else {
-        throw new Error('Failed to authenticate');
+      if (!signInResult) {
+        throw new Error('Farcaster sign-in was cancelled or failed');
       }
+      
+      console.log("Farcaster sign-in success:", signInResult);
+      
+      // Extract Farcaster user data
+      const { 
+        message, 
+        signature, 
+        fid, 
+        username, 
+        displayName, 
+        pfpUrl, 
+        bio, 
+        custody 
+      } = signInResult;
+      
+      // Authenticate with our backend
+      const authResponse = await fetch('/api/auth/farcaster', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message,
+          signature,
+          fid,
+          username,
+          displayName,
+          pfpUrl,
+          bio,
+          custody
+        }),
+      });
+      
+      if (!authResponse.ok) {
+        throw new Error('Failed to authenticate with server');
+      }
+      
+      // Get user data from response
+      const user = await authResponse.json();
+      console.log("User authenticated with server:", user);
       
       // Store in localStorage
       localStorage.setItem('user', JSON.stringify(user));
       
+      // Update auth state
       setAuthState({
         user,
         isAuthenticated: true,
@@ -203,9 +227,14 @@ export default function useAuth() {
         error: null,
       });
       
+      // Dispatch authentication event
+      document.dispatchEvent(new CustomEvent('userAuthenticated', { 
+        detail: { user } 
+      }));
+      
       toast({
         title: "Connected Successfully",
-        description: "You're now signed in with Farcaster",
+        description: `You're now signed in as ${displayName || username || 'a Farcaster user'}`,
       });
       
       return user;

@@ -11,7 +11,7 @@ import { useState, useEffect } from "react";
 import useAuth from "@/hooks/useAuth";
 import { AuthKitProvider } from "@farcaster/auth-kit";
 
-function App() {
+function AppContent() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const [currentView, setCurrentView] = useState<string>("daily");
   const [appKey, setAppKey] = useState<number>(0); // Key to force re-render
@@ -90,6 +90,23 @@ function App() {
         <Navigation activeView={currentView} onViewChange={handleViewChange} />
       </div>
     </TooltipProvider>
+  );
+}
+
+function App() {
+  // Configure Farcaster Auth Kit with your app's details
+  const config = {
+    // Required from Farcaster Developer Hub
+    relay: "https://relay.farcaster.xyz",
+    rpcUrl: "https://mainnet.optimism.io", // For mainnet
+    domain: window.location.host,
+    siweUri: window.location.origin
+  };
+
+  return (
+    <AuthKitProvider config={config}>
+      <AppContent />
+    </AuthKitProvider>
   );
 }
 

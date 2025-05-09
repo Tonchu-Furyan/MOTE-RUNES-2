@@ -134,88 +134,31 @@ export default function Login() {
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <div className="w-full">
-            <SignInButton
-              onSuccess={(data) => {
-                console.log("Farcaster sign-in success:", data);
-                // Now we'll handle the authentication with our backend
-                const { message, signature, fid, username, displayName, pfpUrl, bio, custody } = data;
-                fetch('/api/auth/farcaster', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    message,
-                    signature,
-                    fid,
-                    username,
-                    displayName,
-                    pfpUrl,
-                    bio,
-                    custody
-                  }),
-                })
-                .then(res => {
-                  if (!res.ok) throw new Error('Authentication failed');
-                  return res.json();
-                })
-                .then(userData => {
-                  console.log("User authenticated with server:", userData);
-                  // Store the user data in local storage
-                  localStorage.setItem('user', JSON.stringify(userData));
-                  // Trigger auth state update
-                  window.location.reload();
-                })
-                .catch(error => {
-                  console.error("Error authenticating with server:", error);
-                  toast({
-                    variant: "destructive",
-                    title: "Authentication Failed",
-                    description: "Could not authenticate with the server. Please try again.",
-                  });
-                });
-              }}
-              onError={(error) => {
-                console.error("Farcaster sign-in error:", error);
-                toast({
-                  variant: "destructive",
-                  title: "Farcaster Sign-In Failed",
-                  description: error.message || "Could not connect with Farcaster",
-                });
-              }}
-              debug={false}
-              nonce={"runes-" + Math.floor(Math.random() * 1000000)}
-              timeout={300000}
-              domain={window.location.hostname}
-              siweUri={window.location.origin}
-              className="w-full"
-              mintDisplayStyle="none"
+            <Button
+              onClick={connectWithFarcaster}
+              disabled={isLoading}
+              className="bg-darkgray border border-gold text-gold font-medium py-6 rounded-lg hover:bg-gold hover:text-black transition duration-300 h-auto w-full"
             >
-              <Button
-                disabled={isLoading}
-                className="bg-darkgray border border-gold text-gold font-medium py-6 rounded-lg hover:bg-gold hover:text-black transition duration-300 h-auto w-full"
-              >
-                {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-gold rounded-full border-t-transparent animate-spin mr-2"></div>
-                ) : (
-                  <svg 
-                    className="mr-2 h-5 w-5" 
-                    fill="currentColor" 
-                    viewBox="0 0 24 24" 
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    <path 
-                      fillRule="evenodd" 
-                      clipRule="evenodd" 
-                      d="M12 7a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H8a1 1 0 110-2h3V8a1 1 0 011-1z" 
-                      fill="black"
-                    />
-                  </svg>
-                )}
-                Connect with Farcaster
-              </Button>
-            </SignInButton>
+              {isLoading ? (
+                <div className="w-5 h-5 border-2 border-gold rounded-full border-t-transparent animate-spin mr-2"></div>
+              ) : (
+                <svg 
+                  className="mr-2 h-5 w-5" 
+                  fill="currentColor" 
+                  viewBox="0 0 24 24" 
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path 
+                    fillRule="evenodd" 
+                    clipRule="evenodd" 
+                    d="M12 7a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H8a1 1 0 110-2h3V8a1 1 0 011-1z" 
+                    fill="black"
+                  />
+                </svg>
+              )}
+              Connect with Farcaster
+            </Button>
           </div>
           
           <Button
