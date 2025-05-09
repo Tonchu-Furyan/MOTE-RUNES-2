@@ -157,8 +157,15 @@ export class MemStorage implements IStorage {
     const user: User = { 
       ...insertUser,
       id,
+      // Handle new Farcaster fields
+      password: insertUser.password || null,
       farcasterAddress: insertUser.farcasterAddress || null,
-      walletAddress: insertUser.walletAddress || null
+      walletAddress: insertUser.walletAddress || null,
+      fid: insertUser.fid || null,
+      displayName: insertUser.displayName || null,
+      pfpUrl: insertUser.pfpUrl || null,
+      custody: insertUser.custody || null,
+      verifications: insertUser.verifications || []
     };
     
     this.users.set(id, user);

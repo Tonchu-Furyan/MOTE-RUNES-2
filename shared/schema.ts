@@ -5,9 +5,14 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  password: text("password"),  // Make password optional for Farcaster users
   farcasterAddress: text("farcaster_address"),
   walletAddress: text("wallet_address"),
+  fid: integer("farcaster_id"),  // Farcaster user ID
+  displayName: text("display_name"),  // User's display name from Farcaster
+  pfpUrl: text("profile_image_url"),  // Profile picture URL
+  custody: text("custody_address"),  // Custody address for Farcaster
+  verifications: text("verifications").array(),  // Array of verified addresses
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -15,6 +20,11 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   farcasterAddress: true,
   walletAddress: true,
+  fid: true,
+  displayName: true,
+  pfpUrl: true,
+  custody: true,
+  verifications: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
