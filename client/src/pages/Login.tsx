@@ -148,13 +148,8 @@ export default function Login() {
                   viewBox="0 0 24 24" 
                   xmlns="http://www.w3.org/2000/svg"
                 >
-                  <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  <path 
-                    fillRule="evenodd" 
-                    clipRule="evenodd" 
-                    d="M12 7a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H8a1 1 0 110-2h3V8a1 1 0 011-1z" 
-                    fill="black"
-                  />
+                  <path d="M12 2.5c-5.247 0-9.5 4.253-9.5 9.5s4.253 9.5 9.5 9.5 9.5-4.253 9.5-9.5-4.253-9.5-9.5-9.5zm0 2c4.142 0 7.5 3.358 7.5 7.5s-3.358 7.5-7.5 7.5-7.5-3.358-7.5-7.5 3.358-7.5 7.5-7.5z"/>
+                  <path d="M8.5 9.5a1 1 0 0 1 1-1H14a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-4.5a1 1 0 0 1-1-1v-5z" />
                 </svg>
               )}
               Connect with Farcaster
