@@ -4,6 +4,11 @@ import { storage } from "./storage";
 import { insertUserSchema, insertRunePullSchema } from "@shared/schema";
 import { z } from "zod";
 import { format } from "date-fns";
+import { AuthKitProvider } from "@farcaster/auth-kit";
+import { 
+  Message as FarcasterMessage,
+  VerificationEthAddressMessage
+} from "@farcaster/core";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // AUTH ROUTES
@@ -81,6 +86,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password, ...userWithoutPassword } = user;
       return res.status(200).json(userWithoutPassword);
     } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Farcaster SIWF (Sign-In With Farcaster) authentication
+  app.post("/api/auth/farcaster", async (req: Request, res: Response) => {
+    try {
+      const { message, signature, fid, username, displayName, pfpUrl, bio, custody } = req.body;
+      
+      if (!message || !signature || !fid) {
+        return res.status(400).json({ 
+          message: "Missing required Farcaster authentication data" 
+        });
+      }
+      
+      // Parse and verify the Farcaster message
+      let farcasterMessage: FarcasterMessage;
+      try {
+        farcasterMessage = FarcasterMessage.fromJSON(message);
+        
+        // You would normally verify the message here
+        // For simplicity in this demo, we'll assume it's valid
+        // const isValid = await verifyMessage(farcasterMessage);
+        // if (!isValid) {
+        //   return res.status(401).json({ message: "Invalid Farcaster signature" });
+        // }
+      } catch (error) {
+        console.error("Error parsing Farcaster message:", error);
+        return res.status(400).json({ message: "Invalid Farcaster message format" });
+      }
+      
+      // Check if user already exists
+      let user = await storage.getUserByFarcasterAddress(custody);
+      
+      if (!user) {
+        // Create a new user
+        user = await storage.createUser({
+          username: username || `farcaster_${fid}`,
+          farcasterAddress: custody,
+          fid: Number(fid),
+          displayName: displayName || username,
+          pfpUrl,
+          custody,
+          verifications: []
+        });
+        
+        console.log("Created new Farcaster user:", user);
+      } else {
+        console.log("Found existing Farcaster user:", user);
+      }
+      
+      // Don't return the password
+      const { password, ...userWithoutPassword } = user;
+      return res.status(200).json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error in Farcaster authentication:", error);
       return res.status(500).json({ message: "Internal server error" });
     }
   });

@@ -9,6 +9,7 @@ import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import { useState, useEffect } from "react";
 import useAuth from "@/hooks/useAuth";
+import { AuthKitProvider } from "@farcaster/auth-kit";
 
 function App() {
   const { isAuthenticated, isLoading, user } = useAuth();
