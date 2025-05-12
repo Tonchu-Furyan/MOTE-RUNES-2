@@ -18,20 +18,23 @@ export default function RuneCountItem({ runeCount, onClick }: RuneCountItemProps
     legendary: "bg-amber-500"
   };
   
+  const rarityLabels = {
+    common: "Common",
+    uncommon: "Uncommon",
+    rare: "Rare",
+    epic: "Epic",
+    legendary: "Legendary"
+  };
+  
   return (
     <Card 
-      className="border border-darkgray hover:border-gold rounded-lg transition duration-300 cursor-pointer overflow-hidden"
+      className="border border-darkgray hover:border-gold rounded-lg transition duration-300 cursor-pointer relative"
       onClick={onClick}
     >
+      <div className={`absolute top-0 right-0 ${rarityColors[rune.rarity as keyof typeof rarityColors]} text-white text-xs py-1 px-2 rounded-bl-md rounded-tr-md`}>
+        {rarityLabels[rune.rarity as keyof typeof rarityLabels]}
+      </div>
       <CardContent className="p-6 relative">
-        <div className="absolute -right-4 -top-4 transform rotate-45">
-          <Badge 
-            variant="outline" 
-            className={`${rarityColors[rune.rarity as keyof typeof rarityColors]} text-white font-medium px-3 py-1 rounded-sm border-none`}
-          >
-            {rune.rarity}
-          </Badge>
-        </div>
         
         <div className="flex justify-between items-start mb-3">
           <div>
