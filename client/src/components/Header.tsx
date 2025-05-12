@@ -1,4 +1,4 @@
-import { User, LogOut, Settings } from "lucide-react";
+import { User, Settings } from "lucide-react";
 import * as React from "react";
 import useAuth from "@/hooks/useAuth";
 import { 
@@ -49,38 +49,23 @@ export default function Header() {
         </div>
         
         <div className="flex items-center">
-          <div className="flex items-center mr-2 px-3 py-1 rounded-full border border-gold text-sm">
+          <div className="flex items-center px-3 py-1.5 rounded-full border border-gold/40 text-sm bg-black/50">
             <User className="text-gold mr-2 h-4 w-4" />
-            <span>{displayName}</span>
+            <span className="text-offwhite">{displayName}</span>
           </div>
-          
-          {/* Direct logout button */}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={logout}
-            className="text-gold hover:bg-gold/10 mr-2"
-          >
-            <LogOut className="h-4 w-4 mr-1" />
-            Logout
-          </Button>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-gold hover:text-offwhite transition duration-300">
+              <Button variant="ghost" size="icon" className="text-gold hover:text-offwhite transition duration-300 ml-2">
                 <Settings className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>Settings</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => {}}>
                 <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={logout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
+                <span>App Settings</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
