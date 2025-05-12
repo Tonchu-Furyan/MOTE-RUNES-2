@@ -101,14 +101,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Parse and verify the Farcaster message
       let farcasterMessage: FarcasterMessage;
       try {
+        // In production, you need to uncomment this verification code
         farcasterMessage = FarcasterMessage.fromJSON(message);
         
-        // You would normally verify the message here
-        // For simplicity in this demo, we'll assume it's valid
-        // const isValid = await verifyMessage(farcasterMessage);
-        // if (!isValid) {
-        //   return res.status(401).json({ message: "Invalid Farcaster signature" });
-        // }
+        // In production, you would use the verification functions from @farcaster/core
+        // For now, we'll implement a basic check (you should replace this with proper verification)
+        const isValid = !!farcasterMessage && !!signature;
+        
+        // When deploying, use the proper verification method:
+        // const farcasterCore = await import('@farcaster/core');
+        // const isValid = await farcasterCore.verifySignature(farcasterMessage, signature);
+        
+        if (!isValid) {
+          console.error("Invalid Farcaster signature");
+          return res.status(401).json({ message: "Invalid Farcaster signature" });
+        }
       } catch (error) {
         console.error("Error parsing Farcaster message:", error);
         return res.status(400).json({ message: "Invalid Farcaster message format" });

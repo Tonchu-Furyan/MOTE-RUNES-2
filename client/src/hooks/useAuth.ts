@@ -21,8 +21,12 @@ interface AuthState {
   error: string | null;
 }
 
-// This is a placeholder for the actual Coinbase Minikit implementation
-// In a real app, you would import and use the actual Minikit functionality
+// For production deployment, we'll use the real Coinbase Minikit and Farcaster Auth Kit
+// Import the necessary functionality from @coinbase/onchainkit if needed
+// import { connectWallet } from '@coinbase/onchainkit';
+
+// For development and testing purposes, we have these functions
+// In production, these should be replaced with actual implementations
 const mockFarcasterConnect = async (): Promise<{ address: string; username: string }> => {
   // Simulate async connection
   await new Promise(resolve => setTimeout(resolve, 1000));

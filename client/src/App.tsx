@@ -100,7 +100,10 @@ function App() {
     relay: "https://relay.farcaster.xyz",
     rpcUrl: "https://mainnet.optimism.io", // For mainnet
     domain: window.location.host,
-    siweUri: window.location.origin
+    siweUri: window.location.origin,
+    // Add your Farcaster app's details when deploying
+    // appName: "Mote Runes", // Your app's name
+    // appIcon: "/icon.png", // Path to your app's icon
   };
 
   return (
