@@ -269,6 +269,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint to get rune counts for a user
+  app.get("/api/rune-counts/user/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const runeCounts = await storage.getRuneCountsByUser(parseInt(userId));
+      
+      return res.status(200).json(runeCounts);
+    } catch (error) {
+      console.error('Error fetching rune counts:', error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
