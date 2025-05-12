@@ -166,8 +166,17 @@ export default function useAuth() {
     checkAuth();
   }, []);
 
-  // Initialize Farcaster auth hook
-  const { signIn, error: farcasterError } = useSignIn();
+  // Initialize Farcaster auth hook with required parameters
+  const { signIn, error: farcasterError } = useSignIn({
+    timeout: 300000, // 5 minutes timeout for the sign in process
+    interval: 1000,  // Polling interval in milliseconds
+    onSuccess: (data) => {
+      console.log("Farcaster sign-in succeeded:", data);
+    },
+    onError: (error) => {
+      console.error("Farcaster sign-in error:", error);
+    }
+  });
   
   const connectWithFarcaster = async () => {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
@@ -178,8 +187,11 @@ export default function useAuth() {
       // In a production environment, this would use the actual Farcaster Auth Kit
       let signInResult;
       
-      if (window.location.hostname.includes('replit.dev')) {
-        // We're in a development environment, use mock data
+      // Production vs Development environment handling
+      const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname.includes('replit');
+      
+      if (isDevelopment) {
+        // We're in a development environment, use mock data for testing
         console.log("Using mock Farcaster data for development");
         signInResult = {
           message: "mock_message",
@@ -192,17 +204,22 @@ export default function useAuth() {
           custody: "0xfixed123456"
         };
       } else {
-        // Attempt real Farcaster sign in
+        // In production, use the real Farcaster Auth Kit
         try {
-          // Note: In the actual environment with proper API keys,
-          // this would trigger the Farcaster authentication flow
-          signIn();
+          console.log("Initiating Farcaster sign-in flow...");
           
-          // This would capture the result in a real environment
-          // For now, we'll throw an error to indicate it's not fully implemented
-          throw new Error('Farcaster auth requires proper API keys and configuration');
+          // This will trigger the Farcaster authentication flow using the configured
+          // settings in the AuthKitProvider from App.tsx
+          signInResult = await signIn();
+          
+          if (!signInResult) {
+            throw new Error('Farcaster sign-in returned no data');
+          }
+          
+          console.log("Farcaster sign-in completed successfully:", signInResult);
         } catch (e) {
-          throw new Error('Farcaster authentication requires API keys and proper configuration');
+          console.error("Farcaster authentication error:", e);
+          throw new Error('Farcaster authentication failed. Please try again.');
         }
       }
       

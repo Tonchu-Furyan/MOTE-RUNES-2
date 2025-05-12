@@ -99,25 +99,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Parse and verify the Farcaster message
-      let farcasterMessage: FarcasterMessage;
       try {
-        // In production, you need to uncomment this verification code
-        farcasterMessage = FarcasterMessage.fromJSON(message);
-        
-        // In production, you would use the verification functions from @farcaster/core
-        // For now, we'll implement a basic check (you should replace this with proper verification)
-        const isValid = !!farcasterMessage && !!signature;
-        
-        // When deploying, use the proper verification method:
-        // const farcasterCore = await import('@farcaster/core');
-        // const isValid = await farcasterCore.verifySignature(farcasterMessage, signature);
-        
-        if (!isValid) {
-          console.error("Invalid Farcaster signature");
-          return res.status(401).json({ message: "Invalid Farcaster signature" });
+        // In development, we might pass in mock data
+        if (process.env.NODE_ENV === 'development' && message === 'mock_message') {
+          console.log("Using mock Farcaster authentication for development");
+        } else {
+          // In production, we need to properly verify the Farcaster message
+          try {
+            // Import the FarcasterMessage type from @farcaster/core
+            const { FarcasterMessage, ViemLocalEip712Signer } = await import('@farcaster/core');
+            
+            // Parse the message
+            const parsedMessage = FarcasterMessage.fromJSON(JSON.parse(message));
+            
+            // Convert signature to buffer if it's a string
+            const signatureBuffer = typeof signature === 'string' 
+              ? Buffer.from(signature.replace(/^0x/, ''), 'hex') 
+              : signature;
+            
+            // Verify the signature (implementation depends on Farcaster SDK version)
+            // This is a placeholder - replace with actual verification logic
+            // from the Farcaster documentation for your SDK version
+            const isValid = !!parsedMessage && !!signatureBuffer;
+            
+            if (!isValid) {
+              console.error("Invalid Farcaster signature");
+              return res.status(401).json({ message: "Invalid Farcaster signature" });
+            }
+          } catch (verifyError) {
+            console.error("Error verifying Farcaster message:", verifyError);
+            return res.status(401).json({ message: "Farcaster verification failed" });
+          }
         }
       } catch (error) {
-        console.error("Error parsing Farcaster message:", error);
+        console.error("Error processing Farcaster authentication:", error);
         return res.status(400).json({ message: "Invalid Farcaster message format" });
       }
       

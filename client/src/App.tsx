@@ -101,9 +101,9 @@ function App() {
     rpcUrl: "https://mainnet.optimism.io", // For mainnet
     domain: window.location.host,
     siweUri: window.location.origin,
-    // Add your Farcaster app's details when deploying
-    // appName: "Mote Runes", // Your app's name
-    // appIcon: "/icon.png", // Path to your app's icon
+    // Production app details
+    appName: "Mote Runes",
+    appIcon: "/generated-icon.png", // Using the icon in the root directory
   };
 
   return (
