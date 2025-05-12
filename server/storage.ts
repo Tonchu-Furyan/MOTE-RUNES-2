@@ -1,8 +1,11 @@
 import { 
   users, type User, type InsertUser,
   runes, type Rune, type InsertRune,
-  runePulls, type RunePull, type InsertRunePull, type RunePullWithRune
+  runePulls, type RunePull, type InsertRunePull, type RunePullWithRune,
+  runeCounts, type RuneCount, type InsertRuneCount, type RuneCountWithRune
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, gte, lt, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -20,6 +23,10 @@ export interface IStorage {
   getLatestRunePullByUser(userId: number): Promise<RunePullWithRune | undefined>;
   createRunePull(runePull: InsertRunePull): Promise<RunePull>;
   hasUserPulledToday(userId: number, date: Date): Promise<boolean>;
+  
+  // New methods for rune counts
+  getRuneCountsByUser(userId: number): Promise<RuneCountWithRune[]>;
+  incrementRuneCount(userId: number, runeId: number): Promise<RuneCount>;
 }
 
 export class MemStorage implements IStorage {
@@ -38,8 +45,16 @@ export class MemStorage implements IStorage {
     this.runeIdCounter = 1;
     this.runePullIdCounter = 1;
     
-    // Initialize with Elder Futhark runes
+    // Initialize with default runes
     this.initializeRunes();
+    
+    // Create a test user for debugging
+    this.createUser({
+      username: 'testuser',
+      password: 'password'
+    }).then(user => {
+      console.log("Created test user for debugging:", user);
+    });
   }
 
   private initializeRunes() {
@@ -49,80 +64,133 @@ export class MemStorage implements IStorage {
         symbol: "ᚠ",
         meaning: "Wealth, Prosperity",
         interpretation: "Fehu signals a time of abundance and prosperity. Today, pay attention to your resources and consider how you can better manage what you have.",
-        guidance: "Focus on gratitude for what you possess and consider how to make your resources work for you. A good day for financial planning."
+        guidance: "Focus on gratitude for what you possess and consider how to make your resources work for you. A good day for financial planning.",
+        rarity: "uncommon"
       },
       {
         name: "URUZ",
         symbol: "ᚢ",
         meaning: "Strength, Vitality",
         interpretation: "Uruz brings physical energy and determination. This is a good time for new beginnings that require endurance and persistence.",
-        guidance: "Trust in your physical strength and emotional resilience. Today is ideal for tackling challenging tasks that require stamina."
+        guidance: "Trust in your physical strength and emotional resilience. Today is ideal for tackling challenging tasks that require stamina.",
+        rarity: "common"
       },
       {
         name: "THURISAZ",
         symbol: "ᚦ",
         meaning: "Protection, Catalyst",
         interpretation: "Thurisaz offers protection but can also indicate challenges that serve as catalysts for growth. Approach obstacles as opportunities.",
-        guidance: "Be mindful of reactive behavior. Consider how challenges today may actually be serving your higher purpose."
+        guidance: "Be mindful of reactive behavior. Consider how challenges today may actually be serving your higher purpose.",
+        rarity: "rare"
       },
       {
         name: "ANSUZ",
         symbol: "ᚨ",
         meaning: "Communication, Wisdom",
         interpretation: "Ansuz represents divine communication and wisdom. Listen carefully to messages coming your way and trust your intuition.",
-        guidance: "Pay attention to recurring thoughts and messages. Your intuition is heightened, and wisdom is available to you if you listen carefully."
+        guidance: "Pay attention to recurring thoughts and messages. Your intuition is heightened, and wisdom is available to you if you listen carefully.",
+        rarity: "epic"
       },
       {
         name: "RAIDHO",
         symbol: "ᚱ",
         meaning: "Journey, Growth",
         interpretation: "Raidho indicates a journey or progression. Today may bring movement in your life, either literal or metaphorical.",
-        guidance: "Consider what journey you're on and if you're moving in the right direction. Good day for travel or making plans for future movement."
+        guidance: "Consider what journey you're on and if you're moving in the right direction. Good day for travel or making plans for future movement.",
+        rarity: "common"
       },
       {
         name: "KENAZ",
         symbol: "ᚲ",
         meaning: "Vision, Creativity",
         interpretation: "Kenaz brings illumination, knowledge, and creative inspiration. A torch in the darkness to guide your way.",
-        guidance: "Follow creative impulses and trust in your ability to bring ideas to life. A good day for artistic pursuits and learning."
+        guidance: "Follow creative impulses and trust in your ability to bring ideas to life. A good day for artistic pursuits and learning.",
+        rarity: "uncommon"
       },
       {
         name: "GEBO",
         symbol: "ᚷ", 
         meaning: "Partnership, Gifts",
         interpretation: "Gebo represents gifts, generosity, and balanced exchanges. Consider the give and take in your relationships.",
-        guidance: "Be open to receiving today, and look for opportunities to give without expectation. Balance is key in all exchanges."
+        guidance: "Be open to receiving today, and look for opportunities to give without expectation. Balance is key in all exchanges.",
+        rarity: "common"
       },
       {
         name: "WUNJO",
         symbol: "ᚹ",
         meaning: "Joy, Harmony",
         interpretation: "Wunjo brings joy, pleasure, and fellowship. A time of happiness and harmony in your life.",
-        guidance: "Appreciate the simple pleasures today. Share your good feelings with others and allow yourself to fully experience joy."
-      }
+        guidance: "Appreciate the simple pleasures today. Share your good feelings with others and allow yourself to fully experience joy.",
+        rarity: "uncommon"
+      },
+      { 
+        name: "HAGALAZ", 
+        symbol: "ᚺ", 
+        meaning: "Disruption, Transformation",
+        interpretation: "Hagalaz represents disruptive forces that ultimately lead to transformation. It brings necessary destruction before renewal.",
+        guidance: "When disruptions occur today, view them as opportunities for transformation rather than mere obstacles. Something better awaits after the storm.",
+        rarity: "rare"
+      },
+      { 
+        name: "NAUTHIZ", 
+        symbol: "ᚾ", 
+        meaning: "Need, Constraint",
+        interpretation: "Nauthiz represents necessity and constraint. It reveals where you must act from need rather than desire, teaching self-reliance.",
+        guidance: "Distinguish between wants and true needs today. The restrictions you face are teaching important lessons about self-sufficiency.",
+        rarity: "rare"
+      },
+      { 
+        name: "ISA", 
+        symbol: "ᛁ", 
+        meaning: "Standstill, Clarity",
+        interpretation: "Isa brings a stillness that allows for concentration and clarity. A time to pause, reflect, and gain perspective.",
+        guidance: "Embrace stillness today. Take time to pause, gather your thoughts, and gain clarity before moving forward. Rushing will not serve you.",
+        rarity: "rare"
+      },
+      { 
+        name: "JERA", 
+        symbol: "ᛃ", 
+        meaning: "Harvest, Cycle",
+        interpretation: "Jera represents the harvest that comes after patient work. It reminds us that all things have their season and proper timing.",
+        guidance: "Recognize that good outcomes require proper timing. Be patient with processes that cannot be rushed, knowing your efforts will bear fruit in due season.",
+        rarity: "epic"
+      },
+      { 
+        name: "EIHWAZ", 
+        symbol: "ᛇ", 
+        meaning: "Endurance, Defense",
+        interpretation: "Eihwaz represents strength through adversity and the ability to endure. It provides protection and connects different realms of existence.",
+        guidance: "Draw on your inner reserves of strength today. You have greater endurance than you realize, and this is a time to stand firm against challenges.",
+        rarity: "epic"
+      },
+      { 
+        name: "PERTHRO", 
+        symbol: "ᛈ", 
+        meaning: "Mystery, Fate",
+        interpretation: "Perthro represents the mysteries of fate and the unknown aspects of existence. It brings initiation into hidden knowledge.",
+        guidance: "Be open to the mysterious today. Not everything can or should be explained, and accepting uncertainty creates space for magical possibilities.",
+        rarity: "legendary"
+      },
+      { 
+        name: "ALGIZ", 
+        symbol: "ᛉ", 
+        meaning: "Protection, Higher Self",
+        interpretation: "Algiz offers divine protection and connection to higher consciousness. It represents the elk, with antlers reaching to the heavens while firmly grounded.",
+        guidance: "You are divinely protected today. Connect with your higher self and spiritual guides while remaining grounded in practical matters.",
+        rarity: "legendary"
+      },
+      { 
+        name: "SOWILO", 
+        symbol: "ᛊ", 
+        meaning: "Success, Wholeness",
+        interpretation: "Sowilo represents the illuminating power of the sun, bringing success, wholeness, and vitality. It guarantees ultimate victory.",
+        guidance: "Let your inner light shine today. Success is available to you when you align with your true purpose and wholeness. Victory is assured.",
+        rarity: "legendary"
+      },
     ];
-    
-    // Adding rarity values based on the perceived power and meaning of each rune
-    const runesWithRarity = [
-      { ...elderFutharkRunes[0], rarity: "uncommon" }, // FEHU - Wealth is moderately powerful
-      { ...elderFutharkRunes[1], rarity: "common" },   // URUZ - Basic strength rune
-      { ...elderFutharkRunes[2], rarity: "rare" },     // THURISAZ - Protection is valuable
-      { ...elderFutharkRunes[3], rarity: "epic" },     // ANSUZ - Divine wisdom is very powerful
-      { ...elderFutharkRunes[4], rarity: "common" },   // RAIDHO - Basic journey rune
-      { ...elderFutharkRunes[5], rarity: "uncommon" }, // KENAZ - Vision is moderately valuable
-      { ...elderFutharkRunes[6], rarity: "common" },   // GEBO - Basic partnership rune
-      { ...elderFutharkRunes[7], rarity: "uncommon" }  // WUNJO - Joy is moderately valuable
-    ];
-    
-    runesWithRarity.forEach(runeData => {
-      this.createRune({
-        name: runeData.name,
-        symbol: runeData.symbol,
-        meaning: runeData.meaning,
-        interpretation: runeData.interpretation,
-        guidance: runeData.guidance,
-        rarity: runeData.rarity
-      });
+
+    elderFutharkRunes.forEach(runeData => {
+      this.createRune(runeData);
     });
   }
 
@@ -245,19 +313,80 @@ export class MemStorage implements IStorage {
         new Date(pull.pullDate).toISOString().split('T')[0] === todayStr
     );
   }
+  
+  // These are stub implementations since we don't have rune counts in memory storage
+  async getRuneCountsByUser(userId: number): Promise<RuneCountWithRune[]> {
+    // We'll calculate this on the fly from runePulls
+    const userPulls = await this.getRunePullsByUser(userId);
+    
+    // Count occurrences of each rune
+    const countMap = new Map<number, { count: number, rune: Rune, firstPulledAt: Date, lastPulledAt: Date }>();
+    
+    for (const pull of userPulls) {
+      if (!countMap.has(pull.runeId)) {
+        countMap.set(pull.runeId, { 
+          count: 1, 
+          rune: pull.rune,
+          firstPulledAt: new Date(pull.createdAt),
+          lastPulledAt: new Date(pull.createdAt)
+        });
+      } else {
+        const current = countMap.get(pull.runeId)!;
+        current.count += 1;
+        
+        const pullDate = new Date(pull.createdAt);
+        if (pullDate < current.firstPulledAt) {
+          current.firstPulledAt = pullDate;
+        }
+        if (pullDate > current.lastPulledAt) {
+          current.lastPulledAt = pullDate;
+        }
+      }
+    }
+    
+    // Convert to array and sort by count (descending)
+    return Array.from(countMap.entries())
+      .map(([runeId, data]) => ({
+        userId,
+        runeId,
+        count: data.count,
+        firstPulledAt: data.firstPulledAt,
+        lastPulledAt: data.lastPulledAt,
+        rune: data.rune
+      }))
+      .sort((a, b) => b.count - a.count);
+  }
+  
+  async incrementRuneCount(userId: number, runeId: number): Promise<RuneCount> {
+    // In memory storage, we don't actually track this separately
+    // We just return a mock object here
+    return {
+      userId,
+      runeId,
+      count: 1,
+      firstPulledAt: new Date(),
+      lastPulledAt: new Date()
+    };
+  }
 }
 
-export const storage = new MemStorage();
+// Import our DatabaseStorage implementation
+import { DatabaseStorage } from './database-storage';
 
-// Create a test user for debugging purposes
+// Use the database implementation
+export const storage = new DatabaseStorage();
+
+// Initialize the database
 (async () => {
   try {
-    const testUser = await storage.createUser({
-      username: 'testuser',
-      password: 'password'
-    });
-    console.log('Created test user for debugging:', testUser);
+    // Initialize default runes
+    await storage.initializeDefaultRunes();
+    
+    // Create test user
+    await storage.createTestUser();
+    
+    console.log("Database initialized successfully.");
   } catch (error) {
-    console.error('Error creating test user:', error);
+    console.error("Error initializing database:", error);
   }
 })();

@@ -1,8 +1,9 @@
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
 import * as schema from "@shared/schema";
+import ws from 'ws';
 
+// Required for Neon database in Node.js environment
 neonConfig.webSocketConstructor = ws;
 
 if (!process.env.DATABASE_URL) {

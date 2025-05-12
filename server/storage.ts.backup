@@ -1,0 +1,297 @@
+import { users, type User, type InsertUser, runes, type Rune, type InsertRune, runePulls, type RunePull, type InsertRunePull, type RunePullWithRune } from "@shared/schema";
+
+// Interface for storage operations
+export interface IStorage {
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByFarcasterAddress(address: string): Promise<User | undefined>;
+  getUserByWalletAddress(address: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  
+  getRune(id: number): Promise<Rune | undefined>;
+  getAllRunes(): Promise<Rune[]>;
+  createRune(rune: InsertRune): Promise<Rune>;
+  
+  getRunePull(id: number): Promise<RunePull | undefined>;
+  getRunePullsByUser(userId: number): Promise<RunePullWithRune[]>;
+  getLatestRunePullByUser(userId: number): Promise<RunePullWithRune | undefined>;
+  createRunePull(runePull: InsertRunePull): Promise<RunePull>;
+  hasUserPulledToday(userId: number, date: Date): Promise<boolean>;
+}
+
+// In-memory storage implementation
+export class MemStorage implements IStorage {
+  private users: Map<number, User>;
+  private runes: Map<number, Rune>;
+  private runePulls: Map<number, RunePull>;
+  private userIdCounter: number;
+  private runeIdCounter: number;
+  private runePullIdCounter: number;
+
+  constructor() {
+    this.users = new Map();
+    this.runes = new Map();
+    this.runePulls = new Map();
+    this.userIdCounter = 1;
+    this.runeIdCounter = 1;
+    this.runePullIdCounter = 1;
+    
+    // Initialize with default runes
+    this.initializeRunes();
+    
+    // Create a test user for debugging
+    this.createUser({
+      username: 'testuser',
+      password: 'password'
+    }).then(user => {
+      console.log("Created test user for debugging:", user);
+    });
+  }
+
+  private initializeRunes() {
+    const defaultRunes: InsertRune[] = [
+      { 
+        name: 'FEHU', 
+        symbol: 'ᚠ', 
+        meaning: 'Wealth, Prosperity',
+        interpretation: 'Fehu represents wealth, prosperity, and resource management. It suggests that new opportunities for growth and abundance are manifesting.',
+        guidance: 'Focus on your resources today and look for opportunities to increase your prosperity. Be aware of your relationship with material things.',
+        rarity: 'common'
+      },
+      { 
+        name: 'URUZ', 
+        symbol: 'ᚢ', 
+        meaning: 'Strength, Vitality',
+        interpretation: 'Uruz brings physical energy and determination. This is a good time for new beginnings that require endurance and persistence.',
+        guidance: 'Trust in your physical strength and emotional resilience. Today is ideal for tackling challenging tasks that require stamina.',
+        rarity: 'common'
+      },
+      { 
+        name: 'THURISAZ', 
+        symbol: 'ᚦ', 
+        meaning: 'Challenge, Protection',
+        interpretation: 'Thurisaz represents challenges that lead to growth and transformation. It provides protection through confrontation rather than avoidance.',
+        guidance: 'Face challenges directly today rather than avoiding them. Your greatest growth comes through engaging with difficulty, not running from it.',
+        rarity: 'common'
+      },
+      { 
+        name: 'ANSUZ', 
+        symbol: 'ᚨ', 
+        meaning: 'Communication, Wisdom',
+        interpretation: 'Ansuz brings clarity in communication and reveals wisdom. It supports receiving inspired messages and speaking your truth.',
+        guidance: 'Pay special attention to communications today. Listen carefully to others and express yourself with honesty and clarity.',
+        rarity: 'common'
+      },
+      { 
+        name: 'RAIDO', 
+        symbol: 'ᚱ', 
+        meaning: 'Journey, Movement',
+        interpretation: 'Raido represents the journey itself rather than the destination. It brings orderly, rhythmic movement and progress on your path.',
+        guidance: 'Focus on the process today rather than just the end goal. Enjoy the journey and maintain a steady pace toward your objectives.',
+        rarity: 'common'
+      },
+      { 
+        name: 'KENAZ', 
+        symbol: 'ᚲ', 
+        meaning: 'Creativity, Knowledge',
+        interpretation: 'Kenaz brings creative fire, illumination, and technical ability. It ignites passion for learning and making.',
+        guidance: 'Embrace creative projects today. Your ability to craft, learn, and apply knowledge is enhanced. Let your creative fire burn brightly.',
+        rarity: 'uncommon'
+      },
+      { 
+        name: 'GEBO', 
+        symbol: 'ᚷ', 
+        meaning: 'Partnership, Gifts',
+        interpretation: 'Gebo symbolizes gifts, generosity, and balanced partnerships. It represents the sacred exchange of giving and receiving.',
+        guidance: 'Consider what you give and receive in your relationships today. Aim for balance and recognize the gifts that come to you, whether material or spiritual.',
+        rarity: 'uncommon'
+      },
+      { 
+        name: 'WUNJO', 
+        symbol: 'ᚹ', 
+        meaning: 'Joy, Harmony',
+        interpretation: 'Wunjo brings joy, pleasure, and fellowship. A time of happiness and harmony in your life.',
+        guidance: 'Appreciate the simple pleasures today. Share your good feelings with others and allow yourself to fully experience joy.',
+        rarity: 'uncommon'
+      },
+      { 
+        name: 'HAGALAZ', 
+        symbol: 'ᚺ', 
+        meaning: 'Disruption, Transformation',
+        interpretation: 'Hagalaz represents disruptive forces that ultimately lead to transformation. It brings necessary destruction before renewal.',
+        guidance: 'When disruptions occur today, view them as opportunities for transformation rather than mere obstacles. Something better awaits after the storm.',
+        rarity: 'uncommon'
+      },
+      { 
+        name: 'NAUTHIZ', 
+        symbol: 'ᚾ', 
+        meaning: 'Need, Constraint',
+        interpretation: 'Nauthiz represents necessity and constraint. It reveals where you must act from need rather than desire, teaching self-reliance.',
+        guidance: 'Distinguish between wants and true needs today. The restrictions you face are teaching important lessons about self-sufficiency.',
+        rarity: 'uncommon'
+      },
+      { 
+        name: 'ISA', 
+        symbol: 'ᛁ', 
+        meaning: 'Standstill, Clarity',
+        interpretation: 'Isa brings a stillness that allows for concentration and clarity. A time to pause, reflect, and gain perspective.',
+        guidance: 'Embrace stillness today. Take time to pause, gather your thoughts, and gain clarity before moving forward. Rushing will not serve you.',
+        rarity: 'rare'
+      },
+      { 
+        name: 'JERA', 
+        symbol: 'ᛃ', 
+        meaning: 'Harvest, Cycle',
+        interpretation: 'Jera represents the harvest that comes after patient work. It reminds us that all things have their season and proper timing.',
+        guidance: 'Recognize that good outcomes require proper timing. Be patient with processes that cannot be rushed, knowing your efforts will bear fruit in due season.',
+        rarity: 'rare'
+      },
+      { 
+        name: 'EIHWAZ', 
+        symbol: 'ᛇ', 
+        meaning: 'Endurance, Defense',
+        interpretation: 'Eihwaz represents strength through adversity and the ability to endure. It provides protection and connects different realms of existence.',
+        guidance: 'Draw on your inner reserves of strength today. You have greater endurance than you realize, and this is a time to stand firm against challenges.',
+        rarity: 'rare'
+      },
+      { 
+        name: 'PERTHRO', 
+        symbol: 'ᛈ', 
+        meaning: 'Mystery, Fate',
+        interpretation: 'Perthro represents the mysteries of fate and the unknown aspects of existence. It brings initiation into hidden knowledge.',
+        guidance: 'Be open to the mysterious today. Not everything can or should be explained, and accepting uncertainty creates space for magical possibilities.',
+        rarity: 'epic'
+      },
+      { 
+        name: 'ALGIZ', 
+        symbol: 'ᛉ', 
+        meaning: 'Protection, Higher Self',
+        interpretation: 'Algiz offers divine protection and connection to higher consciousness. It represents the elk, with antlers reaching to the heavens while firmly grounded.',
+        guidance: 'You are divinely protected today. Connect with your higher self and spiritual guides while remaining grounded in practical matters.',
+        rarity: 'epic'
+      },
+      { 
+        name: 'SOWILO', 
+        symbol: 'ᛊ', 
+        meaning: 'Success, Wholeness',
+        interpretation: 'Sowilo represents the illuminating power of the sun, bringing success, wholeness, and vitality. It guarantees ultimate victory.',
+        guidance: 'Let your inner light shine today. Success is available to you when you align with your true purpose and wholeness. Victory is assured.',
+        rarity: 'legendary'
+      },
+    ];
+    
+    for (const runeData of defaultRunes) {
+      this.createRune(runeData);
+    }
+  }
+
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.username === username);
+  }
+
+  async getUserByFarcasterAddress(address: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.farcasterAddress === address);
+  }
+
+  async getUserByWalletAddress(address: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.walletAddress === address);
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.userIdCounter++;
+    console.log(`Creating user with ID: ${id} Data:`, insertUser);
+    
+    const user: User = { 
+      ...insertUser,
+      id,
+      farcasterAddress: insertUser.farcasterAddress || null,
+      walletAddress: insertUser.walletAddress || null,
+      fid: insertUser.fid || null,
+      displayName: insertUser.displayName || null,
+      pfpUrl: insertUser.pfpUrl || null,
+      custody: insertUser.custody || null,
+      verifications: insertUser.verifications || []
+    };
+    
+    this.users.set(id, user);
+    console.log(`User created and stored. Current users:`, Array.from(this.users.entries()));
+    return user;
+  }
+
+  async getRune(id: number): Promise<Rune | undefined> {
+    return this.runes.get(id);
+  }
+
+  async getAllRunes(): Promise<Rune[]> {
+    return Array.from(this.runes.values());
+  }
+
+  async createRune(insertRune: InsertRune): Promise<Rune> {
+    const id = this.runeIdCounter++;
+    
+    const rune: Rune = { 
+      ...insertRune,
+      id
+    };
+    
+    this.runes.set(id, rune);
+    return rune;
+  }
+
+  async getRunePull(id: number): Promise<RunePull | undefined> {
+    return this.runePulls.get(id);
+  }
+
+  async getRunePullsByUser(userId: number): Promise<RunePullWithRune[]> {
+    const pulls = Array.from(this.runePulls.values())
+      .filter(pull => pull.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    // Enrich with rune data
+    return Promise.all(pulls.map(async pull => {
+      const rune = await this.getRune(pull.runeId);
+      return {
+        ...pull,
+        rune: rune!
+      };
+    }));
+  }
+
+  async getLatestRunePullByUser(userId: number): Promise<RunePullWithRune | undefined> {
+    const pulls = await this.getRunePullsByUser(userId);
+    if (pulls.length === 0) return undefined;
+    
+    return pulls[0]; // Already sorted by date in getRunePullsByUser
+  }
+
+  async createRunePull(insertRunePull: InsertRunePull): Promise<RunePull> {
+    const id = this.runePullIdCounter++;
+    
+    const runePull: RunePull = { ...insertRunePull, id, createdAt: new Date() };
+    
+    this.runePulls.set(id, runePull);
+    return runePull;
+  }
+
+  async hasUserPulledToday(userId: number, date: Date): Promise<boolean> {
+    const today = new Date(date);
+    today.setHours(0, 0, 0, 0);
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Find any pulls from this user within the date range
+    return Array.from(this.runePulls.values()).some(pull => {
+      const pullDate = new Date(pull.pullDate);
+      return pull.userId === userId && 
+             pullDate >= today &&
+             pullDate < tomorrow;
+    });
+  }
+}
+
+export const storage = new MemStorage();
