@@ -1,4 +1,5 @@
-import { pgTable, text, serial, integer, timestamp, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, date, primaryKey } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -70,5 +71,66 @@ export type InsertRunePull = z.infer<typeof insertRunePullSchema>;
 export type RunePull = typeof runePulls.$inferSelect;
 
 export type RunePullWithRune = RunePull & {
+  rune: Rune;
+};
+
+// Relation definitions for our tables
+export const usersRelations = relations(users, ({ many }) => ({
+  runePulls: many(runePulls),
+  runeCounts: many(runeCounts),
+}));
+
+export const runesRelations = relations(runes, ({ many }) => ({
+  runePulls: many(runePulls),
+  runeCounts: many(runeCounts),
+}));
+
+export const runePullsRelations = relations(runePulls, ({ one }) => ({
+  user: one(users, {
+    fields: [runePulls.userId],
+    references: [users.id],
+  }),
+  rune: one(runes, {
+    fields: [runePulls.runeId],
+    references: [runes.id],
+  }),
+}));
+
+// New table for tracking rune counts per user
+export const runeCounts = pgTable("rune_counts", {
+  userId: integer("user_id").notNull().references(() => users.id),
+  runeId: integer("rune_id").notNull().references(() => runes.id),
+  count: integer("count").notNull().default(0),
+  firstPulledAt: timestamp("first_pulled_at").notNull().defaultNow(),
+  lastPulledAt: timestamp("last_pulled_at").notNull().defaultNow(),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.userId, table.runeId] }),
+  }
+});
+
+export const runeCountsRelations = relations(runeCounts, ({ one }) => ({
+  user: one(users, {
+    fields: [runeCounts.userId],
+    references: [users.id],
+  }),
+  rune: one(runes, {
+    fields: [runeCounts.runeId],
+    references: [runes.id],
+  }),
+}));
+
+export const insertRuneCountSchema = createInsertSchema(runeCounts).pick({
+  userId: true,
+  runeId: true,
+  count: true,
+  firstPulledAt: true,
+  lastPulledAt: true,
+});
+
+export type InsertRuneCount = z.infer<typeof insertRuneCountSchema>;
+export type RuneCount = typeof runeCounts.$inferSelect;
+
+export type RuneCountWithRune = RuneCount & {
   rune: Rune;
 };
