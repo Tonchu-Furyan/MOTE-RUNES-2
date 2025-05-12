@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import DailyRune from "@/pages/DailyRune";
-import History from "@/pages/History";
+import RuneCounts from "@/pages/RuneCounts";
 import Login from "@/pages/Login";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
@@ -85,7 +85,7 @@ function AppContent() {
         <Header />
         <main className="container mx-auto px-4 py-4 flex-1">
           {currentView === "daily" && <DailyRune />}
-          {currentView === "history" && <History />}
+          {currentView === "history" && <RuneCounts />}
         </main>
         <Navigation activeView={currentView} onViewChange={handleViewChange} />
       </div>
