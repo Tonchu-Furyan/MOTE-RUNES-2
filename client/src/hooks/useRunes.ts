@@ -7,8 +7,10 @@ import {
   fetchUserRunePulls, 
   fetchLatestUserRunePull, 
   hasUserPulledToday,
+  fetchRuneCountsByUser,
   type Rune,
-  type RunePull
+  type RunePull,
+  type RuneCount
 } from '@/lib/runes';
 
 // Custom hooks for different rune-related queries
@@ -47,6 +49,14 @@ export function useHasPulledToday(userId: number | null) {
   return useQuery({
     queryKey: ['/api/rune-pulls/user/check-today', userId],
     queryFn: () => hasUserPulledToday(userId!),
+    enabled: !!userId,
+  });
+}
+
+export function useRuneCountsByUser(userId: number | null) {
+  return useQuery({
+    queryKey: ['/api/rune-counts/user', userId],
+    queryFn: () => fetchRuneCountsByUser(userId!),
     enabled: !!userId,
   });
 }

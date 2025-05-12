@@ -1,4 +1,4 @@
-import { Sparkles, History as HistoryIcon, User, LogOut } from "lucide-react";
+import { Sparkles, Book, User, LogOut } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
 
 interface NavigationProps {
@@ -24,10 +24,10 @@ export default function Navigation({ activeView, onViewChange }: NavigationProps
         <button 
           className={`flex flex-col items-center ${activeView === "history" ? "text-gold" : "text-lightgray hover:text-gold transition duration-300"}`}
           onClick={() => onViewChange("history")}
-          aria-label="Rune History"
+          aria-label="Rune Counts"
         >
-          <HistoryIcon className="h-6 w-6 mb-1" />
-          <span className="text-xs font-medium">History</span>
+          <Book className="h-6 w-6 mb-1" />
+          <span className="text-xs font-medium">Rune Counts</span>
         </button>
         
         <button 

@@ -17,6 +17,15 @@ export interface RunePull {
   rune: Rune;
 }
 
+export interface RuneCount {
+  userId: number;
+  runeId: number;
+  count: number;
+  firstPulledAt: string;
+  lastPulledAt: string;
+  rune: Rune;
+}
+
 // Client-side functions to interact with the API
 export async function fetchAllRunes(): Promise<Rune[]> {
   try {
@@ -236,5 +245,20 @@ export async function hasUserPulledToday(userId: number): Promise<boolean> {
     console.error('Error checking if user has pulled today:', error);
     // Default to false on error to allow user to attempt a pull
     return false;
+  }
+}
+
+export async function fetchRuneCountsByUser(userId: number): Promise<RuneCount[]> {
+  try {
+    const response = await fetch(`/api/rune-counts/user/${userId}`, {
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch rune counts: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching rune counts:', error);
+    throw new Error('Failed to fetch your rune counts. Please try again later.');
   }
 }
