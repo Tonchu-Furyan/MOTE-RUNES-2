@@ -59,6 +59,28 @@ export default function DailyRune() {
     },
   });
   
+  // Auto-pull rune if not pulled today
+  const autoPullRune = async () => {
+    if (!userId || hasPulledToday || pullRuneMutation.isPending) return;
+    
+    console.log("Attempting to pull rune with user ID:", userId);
+    
+    try {
+      setIsRevealing(true);
+      const result = await pullRuneMutation.mutateAsync(userId);
+      console.log("Rune pull successful:", result);
+    } catch (error) {
+      console.error("Auto-pull failed:", error);
+      setIsRevealing(false);
+    }
+  };
+  
+  // Try to auto-pull when component mounts and we know user hasn't pulled today
+  // This is deliberately separate from useEffect to allow manual triggering
+  if (isAuthenticated && userId && hasPulledToday === false && !pullRuneMutation.isPending && !isRevealing) {
+    setTimeout(autoPullRune, 500); // Small delay for better UX
+  }
+  
   const handlePullRune = async () => {
     if (!userId) {
       toast({

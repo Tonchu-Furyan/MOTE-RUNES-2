@@ -72,7 +72,8 @@
   
   .rune-card {
     transform-style: preserve-3d;
-    transition: transform 0.8s;
+    transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    @apply relative w-full h-[450px];
   }
   
   .rune-card.flipped {
@@ -81,6 +82,10 @@
   
   .rune-card-front, .rune-card-back {
     backface-visibility: hidden;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
     @apply absolute inset-0 w-full h-full;
   }
   
@@ -98,6 +103,30 @@
   
   .rune-glow {
     box-shadow: 0 0 20px hsla(43, 77%, 52%, 0.4);
+  }
+  
+  /* Custom scrollbar */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsla(43, 77%, 52%, 0.4) hsla(0, 0%, 0%, 0.2);
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: hsla(0, 0%, 0%, 0.2);
+    border-radius: 10px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsla(43, 77%, 52%, 0.4);
+    border-radius: 10px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsla(43, 77%, 52%, 0.6);
   }
 }
 
