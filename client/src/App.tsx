@@ -94,7 +94,28 @@ function AppContent() {
 }
 
 function App() {
-  // Configure Farcaster Auth Kit with your app's details
+  /**
+   * FARCASTER AUTHENTICATION CONFIGURATION
+   * 
+   * For Farcaster authentication to work properly when deployed:
+   * 
+   * 1. Register your app on the Farcaster Developer Hub
+   *    - Visit: https://hub.farcaster.xyz
+   *    - Create a developer account if you don't have one
+   *    - Register this app and get the necessary credentials
+   * 
+   * 2. Ensure you're using the correct relay URL 
+   *    - The default "https://relay.farcaster.xyz" works for most cases
+   *    - You might need a different relay depending on your setup
+   * 
+   * 3. Configure your domain settings
+   *    - Your app must be deployed on a domain allowed by Farcaster
+   *    - Update the domain and siweUri to match your production URL
+   * 
+   * 4. Provide an app icon 
+   *    - The icon will be displayed during the Sign In With Farcaster flow
+   *    - Use a square image of at least 200x200 pixels
+   */
   const config = {
     // Required from Farcaster Developer Hub
     relay: "https://relay.farcaster.xyz",

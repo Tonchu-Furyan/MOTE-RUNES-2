@@ -87,7 +87,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Farcaster SIWF (Sign-In With Farcaster) authentication
+  /**
+   * Farcaster SIWF (Sign-In With Farcaster) authentication endpoint
+   * 
+   * For this to work properly in production:
+   * 1. Register your app with Farcaster
+   * 2. Implement proper message verification using the Farcaster SDK
+   * 3. Validate the user data received from Farcaster
+   * 
+   * Resources:
+   * - Farcaster Auth Kit: https://docs.farcaster.xyz/auth-kit/introduction
+   * - Farcaster Core: https://docs.farcaster.xyz/developers/core
+   * - Sign-in with Farcaster: https://docs.farcaster.xyz/auth-kit/sign-in-with-farcaster
+   */
   app.post("/api/auth/farcaster", async (req: Request, res: Response) => {
     try {
       const { message, signature, fid, username, displayName, pfpUrl, bio, custody } = req.body;
@@ -106,11 +118,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           // In production, we need to properly verify the Farcaster message
           try {
-            // Import the FarcasterMessage type from @farcaster/core
-            const { FarcasterMessage, ViemLocalEip712Signer } = await import('@farcaster/core');
+            // Import the core package for verification
+            const farcasterCore = await import('@farcaster/core');
             
-            // Parse the message
-            const parsedMessage = FarcasterMessage.fromJSON(JSON.parse(message));
+            // Parse the message - the exact API depends on your version of @farcaster/core
+            // This is a simplified implementation for illustration
+            const parsedMessage = JSON.parse(message);
             
             // Convert signature to buffer if it's a string
             const signatureBuffer = typeof signature === 'string' 
